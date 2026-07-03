@@ -28,6 +28,21 @@ function formatCellValue(col: any, item: Record<string, any>): string {
   return String(val)
 }
 
+function buildTableHtml(columns: any[], data: Record<string, any>[]): string {
+  const headers = columns.map((col) => {
+    const h = typeof col.header === 'string' ? col.header : (col.accessorKey || '')
+    return `<th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;border-bottom:1px solid #e2e8f0;background:#f1f5f9">${h}</th>`
+  }).join('')
+  const rows = data.map((item) => {
+    const cells = columns.map((col) => {
+      const v = formatCellValue(col, item)
+      return `<td style="padding:6px 12px;font-size:12px;border-bottom:1px solid #f1f5f9">${v}</td>`
+    }).join('')
+    return `<tr>${cells}</tr>`
+  }).join('')
+  return `<table style="width:100%;border-collapse:collapse">${headers ? `<thead><tr>${headers}</tr></thead>` : ''}<tbody>${rows}</tbody></table>`
+}
+
 export function ExportButtons({ data, filename = 'export', columns, pageRef, tableRef, variant = 'row' }: ExportButtonsProps) {
   const [open, setOpen] = useState(false)
 
@@ -52,77 +67,102 @@ export function ExportButtons({ data, filename = 'export', columns, pageRef, tab
     toast.success(`Exported ${data.length} rows to CSV`)
   }
 
+  const captureSection = async (html2canvas: any, el: HTMLElement): Promise<string> => {
+    const wrapper = document.createElement('div')
+    wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:1200px;background:#f8fafc;padding:24px'
+    wrapper.appendChild(el)
+    document.body.appendChild(wrapper)
+    const canvas = await html2canvas(wrapper, { scale: 2, useCORS: true, logging: false, backgroundColor: '#f8fafc' })
+    document.body.removeChild(wrapper)
+    return canvas.toDataURL('image/png')
+  }
+
+  const addImageToPdf = (pdf: any, imgData: string, imgWidth: number, maxPageHeight: number) => {
+    const img = new Image()
+    img.src = imgData
+    const imgHeight = (img.naturalHeight * imgWidth) / img.naturalWidth
+    if (imgHeight <= maxPageHeight) {
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight)
+    } else {
+      let remaining = imgHeight
+      let offset = 0
+      while (remaining > 0) {
+        if (offset > 0) pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 10, 10 - offset, imgWidth, imgHeight)
+        offset += maxPageHeight
+        remaining -= maxPageHeight
+      }
+    }
+  }
+
   const exportToPDF = async () => {
     const sourceEl = pageRef?.current || tableRef?.current
     if (!sourceEl) { toast.error('Page reference not available'); return }
     if (!data.length) { toast.error('No data to export'); return }
+    toast.loading('Generating PDF...')
     try {
       const html2canvas = (await import('html2canvas')).default
       const jsPDF = (await import('jspdf')).default
+      const pdf = new jsPDF('l', 'mm', 'a4')
+      const pageWidth = 280
+      const maxPageHeight = 190
 
       const clone = sourceEl.cloneNode(true) as HTMLElement
       clone.style.width = '1200px'
-      clone.style.padding = '24px'
 
-      if (columns && data.length > 0) {
-        const searchBar = clone.querySelector('.relative.max-w-xs')
-        const pagination = clone.querySelector('.flex.items-center.justify-between')
-        searchBar?.remove()
-        pagination?.remove()
+      const searchBar = clone.querySelector('.relative.max-w-xs')
+      const pagination = clone.querySelector('.flex.items-center.justify-between')
+      searchBar?.remove()
+      pagination?.remove()
 
-        const tableContainer = clone.querySelector('.overflow-auto.rounded-lg')
-        if (tableContainer) {
-          const headers = columns.map((col) => {
-            const h = typeof col.header === 'string' ? col.header : (col.accessorKey || '')
-            return `<th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0;background:#f1f5f9">${h}</th>`
-          }).join('')
-
-          const rows = data.map((item) => {
-            const cells = columns.map((col) => {
-              const v = formatCellValue(col, item)
-              return `<td style="padding:6px 12px;font-size:12px;border-bottom:1px solid #f1f5f9">${v}</td>`
-            }).join('')
-            return `<tr>${cells}</tr>`
-          }).join('')
-
-          tableContainer.innerHTML = `<table style="width:100%;border-collapse:collapse">${headers ? `<thead><tr>${headers}</tr></thead>` : ''}<tbody>${rows}</tbody></table>`
-        }
+      const tableContainer = clone.querySelector('.overflow-auto.rounded-lg')
+      if (tableContainer && columns && data.length > 0) {
+        tableContainer.innerHTML = buildTableHtml(columns, data)
       }
 
-      const wrapper = document.createElement('div')
-      wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;'
-      wrapper.appendChild(clone)
-      document.body.appendChild(wrapper)
-
-      const canvas = await html2canvas(wrapper, {
-        scale: 2, useCORS: true, logging: false,
-        backgroundColor: '#f8fafc',
-      })
-      document.body.removeChild(wrapper)
-
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF('l', 'mm', 'a4')
-      const pageWidth = 280
-      const pageHeight = 190
-      const imgWidth = pageWidth
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-
-      if (imgHeight <= pageHeight) {
-        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight)
+      if (!pageRef?.current || !columns) {
+        const imgData = await captureSection(html2canvas, clone)
+        addImageToPdf(pdf, imgData, pageWidth, maxPageHeight)
       } else {
-        let remaining = imgHeight
-        let offset = 0
-        while (remaining > 0) {
-          if (offset > 0) pdf.addPage()
-          pdf.addImage(imgData, 'PNG', 10, 10 - offset, imgWidth, imgHeight)
-          offset += pageHeight
-          remaining -= pageHeight
+        const contentArea = clone.querySelector('.space-y-6') || clone
+        const children = Array.from(contentArea.children) as HTMLElement[]
+
+        const groups: HTMLElement[][] = []
+        let cur: HTMLElement[] = []
+
+        for (const child of children) {
+          const isGrid = child.classList.contains('grid')
+          const isTable = child.classList.contains('overflow-auto')
+          const isFlexTitle = child.classList.contains('flex') && child.classList.contains('items-center') && child.classList.contains('justify-between')
+
+          if (isTable) {
+            if (cur.length > 0) { groups.push(cur); cur = [] }
+            groups.push([child])
+          } else if (cur.length === 0 || (isFlexTitle && cur.length === 0) || (isGrid && cur.length === 0)) {
+            cur.push(child)
+          } else if (isGrid && cur.length === 1 && cur[0].classList.contains('grid')) {
+            groups.push(cur); cur = [child]
+          } else if (cur.length > 0) {
+            cur.push(child)
+          }
+        }
+        if (cur.length > 0) groups.push(cur)
+
+        for (let i = 0; i < groups.length; i++) {
+          const wrapper = document.createElement('div')
+          wrapper.style.cssText = 'width:1200px;'
+          groups[i].forEach((c) => wrapper.appendChild(c))
+          const imgData = await captureSection(html2canvas, wrapper)
+          if (i > 0) pdf.addPage()
+          addImageToPdf(pdf, imgData, pageWidth, maxPageHeight)
         }
       }
 
       pdf.save(`${filename}.pdf`)
+      toast.dismiss()
       toast.success(`PDF exported with ${data.length} rows`)
     } catch {
+      toast.dismiss()
       toast.error('Failed to generate PDF')
     }
   }
