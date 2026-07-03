@@ -1,6 +1,22 @@
 import * as XLSX from 'xlsx'
 import type { DashboardData, XLC, GSF, Merchant, WO, EXPO, XLSatu, ELITE, Promotor } from './data'
 
+function formatExcelDate(value: any): string {
+  if (value == null) return ''
+  const num = Number(value)
+  if (isNaN(num) || num < 1) return String(value)
+  try {
+    const date = new Date((num - 25569) * 86400000)
+    if (isNaN(date.getTime())) return String(value)
+    return date.toLocaleDateString('id-ID', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+  } catch {
+    return String(value)
+  }
+}
+
 function cleanKey(key: string): string {
   return key
     .replace(/[\s\n]+/g, ' ')
@@ -11,17 +27,17 @@ function cleanKey(key: string): string {
     .join('')
 }
 
-function parseXLC(ws: XLSX.WorkSheet): XLC[] {
+export function parseXLC(ws: XLSX.WorkSheet): XLC[] {
   const data = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
   return data
-    .filter((r: any) => r['No.'] || r['No'])
+    .filter((r: any) => (r['No.'] || r['No']) && r['Bulan'])
     .map((r: any) => ({
       No: r['No.'] ?? r['No'],
       Bulan: r['Bulan'] ?? '',
-      Tanggal: r['Tanggal'] ? String(r['Tanggal']) : '',
+      Tanggal: formatExcelDate(r['Tanggal Aktivasi'] ?? r['Tanggal']),
       MSISDN: r['MSISDN'] ?? String(r['MSISDN'] ?? ''),
       PackagePlan: r['Package Plan'] ?? r['PackagePlan'] ?? '',
-      PricePlan: Number(r['Price Plan'] ?? r['PricePlan'] ?? 0),
+      PricePlan: Number(r['  Price Plan  '] ?? r['Price Plan'] ?? r['PricePlan'] ?? 0),
       StoreName: r['Store Name'] ?? r['StoreName'] ?? '',
       UsernameAgent: r['Username Agent'] ?? r['UsernameAgent'] ?? '',
       NamaCRR: r['Nama CRR'] ?? r['NamaCRR'] ?? '',
@@ -31,17 +47,17 @@ function parseXLC(ws: XLSX.WorkSheet): XLC[] {
     }))
 }
 
-function parseGSF(ws: XLSX.WorkSheet): GSF[] {
+export function parseGSF(ws: XLSX.WorkSheet): GSF[] {
   const data = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
   return data
     .filter((r: any) => r['AMOUNT'] || r['Amount'])
     .map((r: any) => ({
       Galeri: r['Galeri'] ?? '',
       Bulan: r['Bulan'] ?? '',
-      Tanggal: r['Tanggal'] ? String(r['Tanggal']) : '',
+      Tanggal: formatExcelDate(r['Tanggal']),
       CashCycleID: Number(r['CASH_CYCLE_ID'] ?? r['CashCycleID'] ?? 0),
       Operation: r['OPERATION'] ?? r['Operation'] ?? '',
-      OperationTime: r['OPERATION_TIME'] ?? r['OperationTime'] ?? '',
+      OperationTime: formatExcelDate(r['OPERATION_TIME']) || (r['OperationTime'] ?? ''),
       OperationSerial: String(r['OPERATION_SERIAL'] ?? r['OperationSerial'] ?? ''),
       CurrencyType: r['CURRENCY_TYPE'] ?? r['CurrencyType'] ?? '',
       PreBalance: Number(r['PRE_BALANCE'] ?? r['PreBalance'] ?? 0),
@@ -62,14 +78,14 @@ function parseGSF(ws: XLSX.WorkSheet): GSF[] {
     }))
 }
 
-function parseMerchant(ws: XLSX.WorkSheet): Merchant[] {
+export function parseMerchant(ws: XLSX.WorkSheet): Merchant[] {
   const data = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
   return data
-    .filter((r: any) => r['No.'] || r['No'])
+    .filter((r: any) => (r['No.'] || r['No']) && r['Bulan'])
     .map((r: any) => ({
       No: r['No.'] ?? r['No'],
       Bulan: r['Bulan'] ?? '',
-      Tanggal: r['Tanggal'] ? String(r['Tanggal']) : '',
+      Tanggal: formatExcelDate(r['Tanggal Aktivasi'] ?? r['Tanggal']),
       MSISDN: String(r['MSISDN'] ?? ''),
       PackagePlan: r['Package Plan'] ?? r['PackagePlan'] ?? '',
       PricePlan: Number(r['Price Plan'] ?? r['PricePlan'] ?? 0),
@@ -82,17 +98,17 @@ function parseMerchant(ws: XLSX.WorkSheet): Merchant[] {
     }))
 }
 
-function parseWO(ws: XLSX.WorkSheet): WO[] {
+export function parseWO(ws: XLSX.WorkSheet): WO[] {
   const data = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
   return data
-    .filter((r: any) => r['No.'] || r['No'])
+    .filter((r: any) => (r['No.'] || r['No']) && r['Bulan'])
     .map((r: any) => ({
       No: r['No.'] ?? r['No'],
       Bulan: r['Bulan'] ?? '',
-      Tanggal: r['Tanggal'] ? String(r['Tanggal']) : '',
+      Tanggal: formatExcelDate(r['Tanggal Aktivasi'] ?? r['Tanggal']),
       MSISDN: String(r['MSISDN'] ?? ''),
       PackagePlan: r['Package Plan'] ?? r['PackagePlan'] ?? '',
-      PricePlan: Number(r['Price Plan'] ?? r['PricePlan'] ?? 0),
+      PricePlan: Number(r['  Price Plan  '] ?? r['Price Plan'] ?? r['PricePlan'] ?? 0),
       XLCName: r['XLC Name'] ?? r['XLCName'] ?? '',
       UsernameAgent: r['Username Agent'] ?? r['UsernameAgent'] ?? '',
       AgentWO: r['Agent WO'] ?? r['AgentWO'] ?? '',
@@ -102,17 +118,18 @@ function parseWO(ws: XLSX.WorkSheet): WO[] {
     }))
 }
 
-function parseEXPO(ws: XLSX.WorkSheet): EXPO[] {
+
+export function parseEXPO(ws: XLSX.WorkSheet): EXPO[] {
   const data = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
   return data
-    .filter((r: any) => r['No.'] || r['No'])
+    .filter((r: any) => (r['No.'] || r['No']) && r['Bulan'])
     .map((r: any) => ({
       No: r['No.'] ?? r['No'],
       Bulan: r['Bulan'] ?? '',
-      Tanggal: r['Tanggal'] ? String(r['Tanggal']) : '',
+      Tanggal: formatExcelDate(r['Tanggal Aktivasi'] ?? r['Tanggal']),
       MSISDN: String(r['MSISDN'] ?? ''),
       PackagePlan: r['Package Plan'] ?? r['PackagePlan'] ?? '',
-      PricePlan: Number(r['Price Plan'] ?? r['PricePlan'] ?? 0),
+      PricePlan: Number(r['  Price Plan  '] ?? r['Price Plan'] ?? r['PricePlan'] ?? 0),
       ExpoName: r['Expo Name'] ?? r['ExpoName'] ?? '',
       UsernameAgent: r['Username Agent'] ?? r['UsernameAgent'] ?? '',
       NamaPromotor: r['Nama Promotor'] ?? r['NamaPromotor'] ?? '',
@@ -122,16 +139,16 @@ function parseEXPO(ws: XLSX.WorkSheet): EXPO[] {
     }))
 }
 
-function parseXLSatu(ws: XLSX.WorkSheet): XLSatu[] {
+export function parseXLSatu(ws: XLSX.WorkSheet): XLSatu[] {
   const data = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
   return data
-    .filter((r: any) => r['No.'] || r['No'])
+    .filter((r: any) => (r['No.'] || r['No']) && r['Bulan'])
     .map((r: any) => ({
       No: r['No.'] ?? r['No'],
       Bulan: r['Bulan'] ?? '',
-      Tanggal: r['Tanggal'] ? String(r['Tanggal']) : '',
+      Tanggal: formatExcelDate(r['Tanggal Aktivasi'] ?? r['Tanggal']),
       NoSO: Number(r['No. SO'] ?? r['NoSO'] ?? 0),
-      PackagePlan: r['Package Plan'] ?? r['PackagePlan'] ?? '',
+      PackagePlan: r['  Price Plan  '] ?? r['Package Plan'] ?? r['PackagePlan'] ?? '',
       PricePlan: Number(r['Price Plan'] ?? r['PricePlan'] ?? 0),
       StoreName: r['Store Name'] ?? r['StoreName'] ?? '',
       UsernameAgent: r['Username Agent'] ?? r['UsernameAgent'] ?? '',
@@ -141,32 +158,57 @@ function parseXLSatu(ws: XLSX.WorkSheet): XLSatu[] {
     }))
 }
 
-function parseELITE(ws: XLSX.WorkSheet): ELITE[] {
-  const data = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
-  return data
-    .filter((r: any) => r['OPERATOR'] || r['Operator'])
-    .map((r: any) => ({
-      Operator: r['OPERATOR'] ?? r['Operator'] ?? '',
-      NewConnection: Number(r['New Connection'] ?? r['NewConnection'] ?? 0),
-      PrepaidToPostpaid: Number(r['Prepaid to Postpaid'] ?? r['PrepaidToPostpaid'] ?? 0),
-      GrandTotal: Number(r['Grand Total'] ?? r['GrandTotal'] ?? 0),
-    }))
-    .filter((r) => r.Operator && r.Operator !== 'Grand Total' && r.Operator !== '(blank)')
+export function parseELITE(ws: XLSX.WorkSheet): ELITE[] {
+  const rows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: null })
+  const result: ELITE[] = []
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i]
+    if (!r || !r[0]) continue
+    if (String(r[0]).trim() === 'OPERATOR' && String(r[1]).trim() === 'New Connection') {
+      for (let j = i + 1; j < rows.length; j++) {
+        const row = rows[j]
+        if (!row || !row[0]) break
+        const op = String(row[0]).trim()
+        if (op === 'Grand Total' || op === '(blank)') break
+        result.push({
+          Operator: op,
+          NewConnection: Number(row[1] ?? 0),
+          PrepaidToPostpaid: Number(row[2] ?? 0),
+          GrandTotal: Number(row[3] ?? 0),
+        })
+      }
+      break
+    }
+  }
+  return result
 }
 
-function parsePromotor(ws: XLSX.WorkSheet): Promotor[] {
-  const data = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
-  return data
-    .filter((r: any) => r['Nama Promotor'] && r['Nama Promotor'] !== 'Grand Total' && r['Nama Promotor'] !== '(blank)')
-    .map((r: any) => {
-      const entry: Promotor = { NamaPromotor: r['Nama Promotor'] }
-      Object.keys(r).forEach((key) => {
-        if (key !== 'Nama Promotor' && key !== 'Grand Total') {
-          entry[key] = Number(r[key]) || 0
+export function parsePromotor(ws: XLSX.WorkSheet): Promotor[] {
+  const rows = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: null })
+  const result: Promotor[] = []
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i]
+    if (!r || !r[0]) continue
+    if (String(r[0]).trim() !== 'Nama Promotor') continue
+    const headers = r
+    for (let j = i + 1; j < rows.length; j++) {
+      const row = rows[j]
+      if (!row || !row[0]) break
+      const name = String(row[0]).trim()
+      if (name === 'Grand Total') break
+      if (name === '(blank)') continue
+      const entry: Promotor = { NamaPromotor: name }
+      for (let k = 1; k < headers.length; k++) {
+        if (headers[k] != null && !['Grand Total', '(blank)'].includes(String(headers[k]).trim())) {
+          const key = String(headers[k]).trim()
+          entry[key] = Number(row[k] ?? 0) || 0
         }
-      })
-      return entry
-    })
+      }
+      result.push(entry)
+    }
+    break
+  }
+  return result
 }
 
 export function parseExcelData(buffer: ArrayBuffer): DashboardData {

@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useStore } from '@/lib/store'
+import { useFilteredData } from '@/hooks/use-filtered-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { PieChart } from '@/components/charts/pie-chart'
@@ -12,8 +13,8 @@ import { DollarSign, CreditCard, Building2, Receipt, TrendingUp } from 'lucide-r
 
 export function GSFPage() {
   const { data } = useStore()
-  const tableRef = useRef<HTMLDivElement>(null)
-  const gsfData = data?.gsf ?? []
+  const pageRef = useRef<HTMLDivElement>(null)
+  const gsfData = useFilteredData(data?.gsf, 'GSF')
 
   const totalAmount = gsfData.reduce((sum, d) => sum + d.Amount, 0)
   const totalTransactions = gsfData.length
@@ -62,26 +63,26 @@ export function GSFPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-text">GSF Transactions</h2>
-        <ExportButtons data={gsfData} filename="GSF_Transactions" tableRef={tableRef} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard title="Total Revenue" value={formatCurrency(totalAmount)} icon={<DollarSign className="h-5 w-5" />} />
-        <KPICard title="Transactions" value={formatNumber(totalTransactions)} variant="success" icon={<CreditCard className="h-5 w-5" />} />
-        <KPICard title="Avg/Transaction" value={formatCurrency(avgTransaction)} variant="warning" icon={<Receipt className="h-5 w-5" />} />
-        <KPICard title="Active Offices" value={formatNumber(officeCount)} variant="default" icon={<Building2 className="h-5 w-5" />} />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BarChart title="Transactions by Office" data={chartByOffice} index="name" categories={['Transactions']} colors={['cyan']} />
-        <BarChart title="Revenue by Office (in Millions)" data={chartRevenueByOffice} index="name" categories={['value']} colors={['emerald']} />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <PieChart title="Event Distribution" data={chartByEvent} />
-        <BarChart title="Top Operators" data={chartByOperator} index="name" categories={['Transactions']} colors={['violet']} />
-      </div>
-      <div ref={tableRef}>
+    <div ref={pageRef}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-text">GSF Transactions</h2>
+          <ExportButtons data={gsfData} filename="GSF_Transactions" pageRef={pageRef} columns={columns} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KPICard title="Total Revenue" value={formatCurrency(totalAmount)} icon={<DollarSign className="h-5 w-5" />} />
+          <KPICard title="Transactions" value={formatNumber(totalTransactions)} variant="success" icon={<CreditCard className="h-5 w-5" />} />
+          <KPICard title="Avg/Transaction" value={formatCurrency(avgTransaction)} variant="warning" icon={<Receipt className="h-5 w-5" />} />
+          <KPICard title="Active Offices" value={formatNumber(officeCount)} variant="default" icon={<Building2 className="h-5 w-5" />} />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BarChart title="Transactions by Office" data={chartByOffice} index="name" categories={['Transactions']} colors={['cyan']} />
+          <BarChart title="Revenue by Office (in Millions)" data={chartRevenueByOffice} index="name" categories={['value']} colors={['emerald']} />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <PieChart title="Event Distribution" data={chartByEvent} />
+          <BarChart title="Top Operators" data={chartByOperator} index="name" categories={['Transactions']} colors={['violet']} />
+        </div>
         <DataTable columns={columns} data={gsfData} searchPlaceholder="Search GSF..." compact />
       </div>
     </div>

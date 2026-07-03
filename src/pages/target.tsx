@@ -5,6 +5,7 @@ import { BarChart } from '@/components/charts/bar-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatNumber, formatCompact } from '@/lib/utils'
+import { useFilteredData } from '@/hooks/use-filtered-data'
 
 const TARGETS: Record<string, number> = {
   XLC: 500,
@@ -18,13 +19,20 @@ const TARGETS: Record<string, number> = {
 export function TargetPage() {
   const { data } = useStore()
 
+  const filteredXlc = useFilteredData(data?.xlc, 'XLC')
+  const filteredGsf = useFilteredData(data?.gsf, 'GSF')
+  const filteredMerchant = useFilteredData(data?.merchant, 'Merchant')
+  const filteredWo = useFilteredData(data?.wo, 'WO')
+  const filteredExpo = useFilteredData(data?.expo, 'EXPO')
+  const filteredXlsatu = useFilteredData(data?.xlsatu, 'XL Satu')
+
   const actuals = {
-    XLC: data?.xlc?.length ?? 0,
-    GSF: data?.gsf?.reduce((s, d) => s + d.Amount, 0) ?? 0,
-    Merchant: data?.merchant?.length ?? 0,
-    WO: data?.wo?.length ?? 0,
-    EXPO: data?.expo?.length ?? 0,
-    XLSatu: data?.xlsatu?.length ?? 0,
+    XLC: filteredXlc.length,
+    GSF: filteredGsf.reduce((s, d) => s + d.Amount, 0),
+    Merchant: filteredMerchant.length,
+    WO: filteredWo.length,
+    EXPO: filteredExpo.length,
+    XLSatu: filteredXlsatu.length,
   }
 
   const chartData = useMemo(() => {
@@ -38,12 +46,13 @@ export function TargetPage() {
 
   const overallAchievement = useMemo(() => {
     if (!data) return 0
-    const totalTarget = Object.values(TARGETS).reduce((s, v) => s + v, 0)
-    const totalActualScaled = Object.keys(TARGETS).reduce((s, key) => {
+    const keys = Object.keys(TARGETS)
+    const pctSum = keys.reduce((s, key) => {
+      const target = TARGETS[key]
       const actual = actuals[key as keyof typeof actuals]
-      return s + (key === 'GSF' ? Math.round(actual / 1_000_000) : actual)
+      return s + (actual / target)
     }, 0)
-    return Math.round((totalActualScaled / totalTarget) * 100)
+    return Math.round((pctSum / keys.length) * 100)
   }, [data, actuals])
 
   const getAchievement = (key: string) => {
@@ -139,7 +148,7 @@ export function TargetPage() {
                 {Object.keys(TARGETS).map((key) => {
                   const target = TARGETS[key]
                   const actual = key === 'GSF' ? actuals.GSF : actuals[key as keyof typeof actuals]
-                  const gap = target - (key === 'GSF' ? actual / 1_000_000 : actual)
+                  const gap = target - actual
                   const pct = getAchievement(key)
                   const status = getStatus(pct)
                   return (
@@ -148,7 +157,7 @@ export function TargetPage() {
                       <td className="px-4 py-3 text-sm text-right text-text-secondary">{key === 'GSF' ? formatCompact(target) : formatNumber(target)}</td>
                       <td className="px-4 py-3 text-sm text-right font-medium text-text">{key === 'GSF' ? formatCompact(actual) : formatNumber(actual)}</td>
                       <td className={`px-4 py-3 text-sm text-right font-medium ${gap > 0 ? 'text-danger' : 'text-success'}`}>
-                        {gap > 0 ? `(${key === 'GSF' ? formatCompact(gap * 1_000_000) : formatNumber(gap)})` : '-'}
+                        {gap > 0 ? `(${key === 'GSF' ? formatCompact(gap) : formatNumber(gap)})` : '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-bold text-text">{pct}%</td>
                       <td className="px-4 py-3 text-center">

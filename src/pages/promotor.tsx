@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useStore } from '@/lib/store'
+import { useFilteredData } from '@/hooks/use-filtered-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { DataTable } from '@/components/tables/data-table'
@@ -11,8 +12,8 @@ import { Users, Package, TrendingUp, Award } from 'lucide-react'
 
 export function PromotorPage() {
   const { data } = useStore()
-  const tableRef = useRef<HTMLDivElement>(null)
-  const promotorData = data?.promotor ?? []
+  const pageRef = useRef<HTMLDivElement>(null)
+  const promotorData = useFilteredData(data?.promotor)
 
   const packageKeys = useMemo(() => {
     if (!promotorData.length) return []
@@ -43,19 +44,19 @@ export function PromotorPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-text">Promotor Performance</h2>
-        <ExportButtons data={promotorData} filename="Promotor" tableRef={tableRef} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard title="Grand Total" value={formatNumber(totalAll)} icon={<Award className="h-5 w-5" />} />
-        <KPICard title="Promotors" value={formatNumber(promotorData.length)} variant="success" icon={<Users className="h-5 w-5" />} />
-        <KPICard title="Package Types" value={formatNumber(packageKeys.length)} variant="warning" icon={<Package className="h-5 w-5" />} />
-        <KPICard title="Avg/Promotor" value={formatNumber(Math.round(totalAll / (promotorData.length || 1)))} variant="default" icon={<TrendingUp className="h-5 w-5" />} />
-      </div>
-      <BarChart title="Total Activations by Promotor" data={chartByPromotor} index="name" categories={['Total']} colors={['violet']} />
-      <div ref={tableRef}>
+    <div ref={pageRef}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-text">Promotor Performance</h2>
+          <ExportButtons data={promotorData} filename="Promotor" pageRef={pageRef} columns={columns} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KPICard title="Grand Total" value={formatNumber(totalAll)} icon={<Award className="h-5 w-5" />} />
+          <KPICard title="Promotors" value={formatNumber(promotorData.length)} variant="success" icon={<Users className="h-5 w-5" />} />
+          <KPICard title="Package Types" value={formatNumber(packageKeys.length)} variant="warning" icon={<Package className="h-5 w-5" />} />
+          <KPICard title="Avg/Promotor" value={formatNumber(Math.round(totalAll / (promotorData.length || 1)))} variant="default" icon={<TrendingUp className="h-5 w-5" />} />
+        </div>
+        <BarChart title="Total Activations by Promotor" data={chartByPromotor} index="name" categories={['Total']} colors={['violet']} />
         <DataTable columns={columns} data={promotorData} searchPlaceholder="Search promotor..." pageSize={10} compact />
       </div>
     </div>

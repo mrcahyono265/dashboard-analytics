@@ -6,6 +6,8 @@ import { Smartphone, CreditCard, Store, UserRound, TrendingUp, BarChart3 } from 
 import { formatCompact, formatCurrency } from '@/lib/utils'
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
+import { useFilteredData } from '@/hooks/use-filtered-data'
+import { computeMonthlySparkline } from '@/lib/sparkline'
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }
@@ -13,52 +15,72 @@ const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }
 export function OverviewPage() {
   const { data } = useStore()
 
-  const xlcTotal = data?.xlc?.length ?? 0
-  const xlcNew = data?.xlc?.filter((d) => d.NewMigrate === 'New').length ?? 0
-  const xlcMigrate = data?.xlc?.filter((d) => d.NewMigrate === 'Migrate').length ?? 0
-  const gsfTotal = data?.gsf?.reduce((sum, d) => sum + d.Amount, 0) ?? 0
-  const gsfCount = data?.gsf?.length ?? 0
-  const merchantTotal = data?.merchant?.length ?? 0
-  const woTotal = data?.wo?.length ?? 0
-  const expoTotal = data?.expo?.length ?? 0
+  const filteredXlc = useFilteredData(data?.xlc, 'XLC')
+  const filteredGsf = useFilteredData(data?.gsf, 'GSF')
+  const filteredMerchant = useFilteredData(data?.merchant, 'Merchant')
+  const filteredWo = useFilteredData(data?.wo, 'WO')
+  const filteredExpo = useFilteredData(data?.expo, 'EXPO')
+
+  const xlcTotal = filteredXlc.length
+  const xlcNew = filteredXlc.filter((d) => d.NewMigrate === 'New').length
+  const xlcMigrate = filteredXlc.filter((d) => d.NewMigrate === 'Migrate').length
+  const gsfTotal = filteredGsf.reduce((sum, d) => sum + d.Amount, 0)
+  const gsfCount = filteredGsf.length
+  const merchantTotal = filteredMerchant.length
+  const woTotal = filteredWo.length
+  const expoTotal = filteredExpo.length
   const grandTotal = xlcTotal + merchantTotal + woTotal + expoTotal
 
+  const xlcSparkline = useMemo(() => computeMonthlySparkline(filteredXlc, () => 1), [filteredXlc])
+  const gsfSparkline = useMemo(() => computeMonthlySparkline(filteredGsf, (d) => d.Amount), [filteredGsf])
+  const merchantSparkline = useMemo(() => computeMonthlySparkline(filteredMerchant, () => 1), [filteredMerchant])
+  const woSparkline = useMemo(() => computeMonthlySparkline(filteredWo, () => 1), [filteredWo])
+  const expoSparkline = useMemo(() => computeMonthlySparkline(filteredExpo, () => 1), [filteredExpo])
+  const totalSparkline = useMemo(() => {
+    const all = [
+      ...filteredXlc.map((d) => ({ Bulan: d.Bulan })),
+      ...filteredMerchant.map((d) => ({ Bulan: d.Bulan })),
+      ...filteredWo.map((d) => ({ Bulan: d.Bulan })),
+      ...filteredExpo.map((d) => ({ Bulan: d.Bulan })),
+    ]
+    return computeMonthlySparkline(all, () => 1)
+  }, [filteredXlc, filteredMerchant, filteredWo, filteredExpo])
+
   const chartByStore = useMemo(() => {
-    if (!data?.xlc?.length) return []
-    const map = data.xlc.reduce<Record<string, number>>((acc, d) => {
+    if (!filteredXlc.length) return []
+    const map = filteredXlc.reduce<Record<string, number>>((acc, d) => {
       acc[d.StoreName || 'Unknown'] = (acc[d.StoreName || 'Unknown'] || 0) + 1
       return acc
     }, {})
     return Object.entries(map).map(([name, value]) => ({ name, Activations: value })).sort((a, b) => b.Activations - a.Activations).slice(0, 10)
-  }, [data?.xlc])
+  }, [filteredXlc])
 
   const chartByPackage = useMemo(() => {
-    if (!data?.xlc?.length) return []
-    const map = data.xlc.reduce<Record<string, number>>((acc, d) => {
+    if (!filteredXlc.length) return []
+    const map = filteredXlc.reduce<Record<string, number>>((acc, d) => {
       acc[d.PackagePlan || 'Unknown'] = (acc[d.PackagePlan || 'Unknown'] || 0) + 1
       return acc
     }, {})
     return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8)
-  }, [data?.xlc])
+  }, [filteredXlc])
 
   const chartByRSM = useMemo(() => {
-    if (!data) return []
-    const all = [...data.xlc, ...data.merchant, ...data.wo, ...data.expo]
+    const all = [...filteredXlc, ...filteredMerchant, ...filteredWo, ...filteredExpo]
     const map = all.reduce<Record<string, number>>((acc, d: any) => {
       if (d.RSM) acc[d.RSM] = (acc[d.RSM] || 0) + 1
       return acc
     }, {})
     return Object.entries(map).map(([name, Activations]) => ({ name, Activations })).sort((a, b) => b.Activations - a.Activations)
-  }, [data])
+  }, [filteredXlc, filteredMerchant, filteredWo, filteredExpo])
 
   const gsfChart = useMemo(() => {
-    if (!data?.gsf?.length) return []
-    const map = data.gsf.reduce<Record<string, number>>((acc, d) => {
+    if (!filteredGsf.length) return []
+    const map = filteredGsf.reduce<Record<string, number>>((acc, d) => {
       acc[d.EventName || 'Other'] = (acc[d.EventName || 'Other'] || 0) + 1
       return acc
     }, {})
     return Object.entries(map).map(([name, value]) => ({ name, Transactions: value })).sort((a, b) => b.Transactions - a.Transactions).slice(0, 8)
-  }, [data?.gsf])
+  }, [filteredGsf])
 
   const channelMix = [
     { name: 'XLC', value: xlcTotal },
@@ -67,8 +89,6 @@ export function OverviewPage() {
     { name: 'EXPO', value: expoTotal },
   ]
 
-  const sparklineData = Array.from({ length: 10 }, (_, i) => ({ value: Math.floor(Math.random() * 50 + 20 + i * 3) }))
-
   const hasMultipleRSM = chartByRSM.length > 1
 
   if (!data) return null
@@ -76,12 +96,12 @@ export function OverviewPage() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <motion.div variants={item}><KPICard title="XLC Activations" value={formatCompact(xlcTotal)} subtitle={`${xlcNew} New · ${xlcMigrate} Migrate`} variant="default" icon={<Smartphone className="h-5 w-5" />} sparklineData={sparklineData} /></motion.div>
-        <motion.div variants={item}><KPICard title="GSF Revenue" value={formatCurrency(gsfTotal)} subtitle={`${formatCompact(gsfCount)} transactions`} variant="success" icon={<CreditCard className="h-5 w-5" />} sparklineData={sparklineData} /></motion.div>
-        <motion.div variants={item}><KPICard title="Merchant" value={formatCompact(merchantTotal)} subtitle="Total activations" variant="warning" icon={<Store className="h-5 w-5" />} /></motion.div>
-        <motion.div variants={item}><KPICard title="WO Agent" value={formatCompact(woTotal)} subtitle="Total activations" variant="danger" icon={<UserRound className="h-5 w-5" />} /></motion.div>
-        <motion.div variants={item}><KPICard title="EXPO" value={formatCompact(expoTotal)} subtitle="Total activations" variant="default" icon={<TrendingUp className="h-5 w-5" />} /></motion.div>
-        <motion.div variants={item}><KPICard title="Grand Total" value={formatCompact(grandTotal)} subtitle="All channels" variant="success" icon={<BarChart3 className="h-5 w-5" />} /></motion.div>
+        <motion.div variants={item}><KPICard title="XLC Activations" value={formatCompact(xlcTotal)} subtitle={`${xlcNew} New · ${xlcMigrate} Migrate`} variant="default" icon={<Smartphone className="h-5 w-5" />} sparklineData={xlcSparkline} /></motion.div>
+        <motion.div variants={item}><KPICard title="GSF Revenue" value={formatCurrency(gsfTotal)} subtitle={`${formatCompact(gsfCount)} transactions`} variant="success" icon={<CreditCard className="h-5 w-5" />} sparklineData={gsfSparkline} /></motion.div>
+        <motion.div variants={item}><KPICard title="Merchant" value={formatCompact(merchantTotal)} subtitle="Total activations" variant="warning" icon={<Store className="h-5 w-5" />} sparklineData={merchantSparkline} /></motion.div>
+        <motion.div variants={item}><KPICard title="WO Agent" value={formatCompact(woTotal)} subtitle="Total activations" variant="danger" icon={<UserRound className="h-5 w-5" />} sparklineData={woSparkline} /></motion.div>
+        <motion.div variants={item}><KPICard title="EXPO" value={formatCompact(expoTotal)} subtitle="Total activations" variant="default" icon={<TrendingUp className="h-5 w-5" />} sparklineData={expoSparkline} /></motion.div>
+        <motion.div variants={item}><KPICard title="Grand Total" value={formatCompact(grandTotal)} subtitle="All channels" variant="success" icon={<BarChart3 className="h-5 w-5" />} sparklineData={totalSparkline} /></motion.div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

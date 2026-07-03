@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { useStore } from '@/lib/store'
-import { parseExcelData } from '@/lib/excel'
+import { parseExcelData, parseXLC, parseGSF, parseMerchant, parseWO, parseEXPO, parseXLSatu, parseELITE, parsePromotor } from '@/lib/excel'
 import type { DashboardData } from '@/lib/data'
 
 export function useDataLoader() {
@@ -34,6 +34,14 @@ export function useDataLoader() {
       }
       const sheetNames = ['XLC', 'GSF', 'Merchant', 'WO', 'EXPO', 'XLSatu', 'ELITE', 'Promotor']
       const allData: Partial<DashboardData> = {}
+      const parsers: Record<string, (ws: XLSX.WorkSheet) => any[]> = {
+        xlc: parseXLC, gsf: parseGSF, merchant: parseMerchant, wo: parseWO,
+        expo: parseEXPO, xlsatu: parseXLSatu, elite: parseELITE, promotor: parsePromotor,
+      }
+      const sheetMap: Record<string, keyof DashboardData> = {
+        XLC: 'xlc', GSF: 'gsf', Merchant: 'merchant', WO: 'wo',
+        EXPO: 'expo', XLSatu: 'xlsatu', ELITE: 'elite', Promotor: 'promotor',
+      }
       await Promise.all(sheetNames.map(async (name) => {
         try {
           const url = `https://docs.google.com/spreadsheets/d/${sheetIdExtracted}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`
@@ -45,11 +53,11 @@ export function useDataLoader() {
           if (ws) {
             const jsonData = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
             if (jsonData.length > 0) {
-              const sheetMap: Record<string, keyof DashboardData> = {
-                XLC: 'xlc', GSF: 'gsf', Merchant: 'merchant', WO: 'wo',
-                EXPO: 'expo', XLSatu: 'xlsatu', ELITE: 'elite', Promotor: 'promotor'
+              const key = sheetMap[name]
+              const parser = parsers[key]
+              if (parser) {
+                (allData as any)[key] = parser(XLSX.utils.json_to_sheet(jsonData))
               }
-              ;(allData as any)[sheetMap[name]] = jsonData
             }
           }
         } catch {

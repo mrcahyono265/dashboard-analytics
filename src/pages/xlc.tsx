@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useStore } from '@/lib/store'
+import { useFilteredData } from '@/hooks/use-filtered-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { PieChart } from '@/components/charts/pie-chart'
@@ -12,8 +13,8 @@ import { Smartphone, Users, Store, ArrowRightLeft, DollarSign } from 'lucide-rea
 
 export function XLCPage() {
   const { data } = useStore()
-  const tableRef = useRef<HTMLDivElement>(null)
-  const xlcData = data?.xlc ?? []
+  const pageRef = useRef<HTMLDivElement>(null)
+  const xlcData = useFilteredData(data?.xlc, 'XLC')
 
   const totalNew = xlcData.filter((d) => d.NewMigrate === 'New').length
   const totalMigrate = xlcData.filter((d) => d.NewMigrate === 'Migrate').length
@@ -56,26 +57,26 @@ export function XLCPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-text">XLC Activation</h2>
-        <ExportButtons data={xlcData} filename="XLC_Activation" tableRef={tableRef} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard title="Total Activations" value={formatNumber(xlcData.length)} icon={<Smartphone className="h-5 w-5" />} />
-        <KPICard title="New" value={formatNumber(totalNew)} subtitle="New activations" variant="success" icon={<Users className="h-5 w-5" />} />
-        <KPICard title="Migrate" value={formatNumber(totalMigrate)} subtitle="Migration" variant="warning" icon={<ArrowRightLeft className="h-5 w-5" />} />
-        <KPICard title="Revenue" value={`Rp ${formatNumber(totalRevenue)}`} subtitle={`Across ${storeCount} stores`} variant="default" icon={<DollarSign className="h-5 w-5" />} />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BarChart title="Activations by Store" data={chartByStore} index="name" categories={['Activations']} colors={['blue']} />
-        <BarChart title="Top CRR Performers" data={chartByCRR} index="name" categories={['Activations']} colors={['emerald']} />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <PieChart title="Package Distribution" data={chartByPackage} />
-        <PieChart title="New vs Migrate" data={[{ name: 'New', value: totalNew }, { name: 'Migrate', value: totalMigrate }]} />
-      </div>
-      <div ref={tableRef}>
+    <div ref={pageRef}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-text">XLC Activation</h2>
+          <ExportButtons data={xlcData} filename="XLC_Activation" pageRef={pageRef} columns={columns} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KPICard title="Total Activations" value={formatNumber(xlcData.length)} icon={<Smartphone className="h-5 w-5" />} />
+          <KPICard title="New" value={formatNumber(totalNew)} subtitle="New activations" variant="success" icon={<Users className="h-5 w-5" />} />
+          <KPICard title="Migrate" value={formatNumber(totalMigrate)} subtitle="Migration" variant="warning" icon={<ArrowRightLeft className="h-5 w-5" />} />
+          <KPICard title="Revenue" value={`Rp ${formatNumber(totalRevenue)}`} subtitle={`Across ${storeCount} stores`} variant="default" icon={<DollarSign className="h-5 w-5" />} />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BarChart title="Activations by Store" data={chartByStore} index="name" categories={['Activations']} colors={['blue']} />
+          <BarChart title="Top CRR Performers" data={chartByCRR} index="name" categories={['Activations']} colors={['emerald']} />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <PieChart title="Package Distribution" data={chartByPackage} />
+          <PieChart title="New vs Migrate" data={[{ name: 'New', value: totalNew }, { name: 'Migrate', value: totalMigrate }]} />
+        </div>
         <DataTable columns={columns} data={xlcData} searchPlaceholder="Search XLC..." compact />
       </div>
     </div>

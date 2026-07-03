@@ -1,18 +1,34 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Download, FileSpreadsheet, FileText, FileDown, Printer } from 'lucide-react'
+import { Download, FileSpreadsheet, FileText, FileDown } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import { formatNumber, formatCurrency } from '@/lib/utils'
 
 interface ExportButtonsProps {
   data: Record<string, any>[]
   filename?: string
+  columns?: any[]
+  pageRef?: React.RefObject<HTMLDivElement | null>
   tableRef?: React.RefObject<HTMLDivElement | null>
   variant?: 'dropdown' | 'row'
 }
 
-export function ExportButtons({ data, filename = 'export', tableRef, variant = 'row' }: ExportButtonsProps) {
+function formatCellValue(col: any, item: Record<string, any>): string {
+  const key = col.accessorKey
+  if (!key) return ''
+  const val = item[key]
+  if (val == null) return ''
+  if (typeof val === 'number') {
+    if (key === 'PricePlan' || key === 'Amount' || key === 'PreBalance' || key === 'NextBalance') {
+      return formatCurrency(val)
+    }
+    return formatNumber(val)
+  }
+  return String(val)
+}
+
+export function ExportButtons({ data, filename = 'export', columns, pageRef, tableRef, variant = 'row' }: ExportButtonsProps) {
   const [open, setOpen] = useState(false)
 
   const exportToExcel = () => {
@@ -37,18 +53,75 @@ export function ExportButtons({ data, filename = 'export', tableRef, variant = '
   }
 
   const exportToPDF = async () => {
-    if (!tableRef?.current) { toast.error('Table reference not available'); return }
+    const sourceEl = pageRef?.current || tableRef?.current
+    if (!sourceEl) { toast.error('Page reference not available'); return }
+    if (!data.length) { toast.error('No data to export'); return }
     try {
       const html2canvas = (await import('html2canvas')).default
       const jsPDF = (await import('jspdf')).default
-      const canvas = await html2canvas(tableRef.current, { scale: 2, useCORS: true, logging: false })
+
+      const clone = sourceEl.cloneNode(true) as HTMLElement
+      clone.style.width = '1200px'
+      clone.style.padding = '24px'
+
+      if (columns && data.length > 0) {
+        const searchBar = clone.querySelector('.relative.max-w-xs')
+        const pagination = clone.querySelector('.flex.items-center.justify-between')
+        searchBar?.remove()
+        pagination?.remove()
+
+        const tableContainer = clone.querySelector('.overflow-auto.rounded-lg')
+        if (tableContainer) {
+          const headers = columns.map((col) => {
+            const h = typeof col.header === 'string' ? col.header : (col.accessorKey || '')
+            return `<th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0;background:#f1f5f9">${h}</th>`
+          }).join('')
+
+          const rows = data.map((item) => {
+            const cells = columns.map((col) => {
+              const v = formatCellValue(col, item)
+              return `<td style="padding:6px 12px;font-size:12px;border-bottom:1px solid #f1f5f9">${v}</td>`
+            }).join('')
+            return `<tr>${cells}</tr>`
+          }).join('')
+
+          tableContainer.innerHTML = `<table style="width:100%;border-collapse:collapse">${headers ? `<thead><tr>${headers}</tr></thead>` : ''}<tbody>${rows}</tbody></table>`
+        }
+      }
+
+      const wrapper = document.createElement('div')
+      wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;'
+      wrapper.appendChild(clone)
+      document.body.appendChild(wrapper)
+
+      const canvas = await html2canvas(wrapper, {
+        scale: 2, useCORS: true, logging: false,
+        backgroundColor: '#f8fafc',
+      })
+      document.body.removeChild(wrapper)
+
       const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF('l', 'mm', 'a4')
-      const imgWidth = 280
+      const pageWidth = 280
+      const pageHeight = 190
+      const imgWidth = pageWidth
       const imgHeight = (canvas.height * imgWidth) / canvas.width
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight)
+
+      if (imgHeight <= pageHeight) {
+        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight)
+      } else {
+        let remaining = imgHeight
+        let offset = 0
+        while (remaining > 0) {
+          if (offset > 0) pdf.addPage()
+          pdf.addImage(imgData, 'PNG', 10, 10 - offset, imgWidth, imgHeight)
+          offset += pageHeight
+          remaining -= pageHeight
+        }
+      }
+
       pdf.save(`${filename}.pdf`)
-      toast.success('PDF exported')
+      toast.success(`PDF exported with ${data.length} rows`)
     } catch {
       toast.error('Failed to generate PDF')
     }

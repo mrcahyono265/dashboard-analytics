@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useStore } from '@/lib/store'
+import { useFilteredData } from '@/hooks/use-filtered-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { PieChart } from '@/components/charts/pie-chart'
@@ -12,8 +13,8 @@ import { Megaphone, Users, Building2, Package } from 'lucide-react'
 
 export function EXPOPage() {
   const { data } = useStore()
-  const tableRef = useRef<HTMLDivElement>(null)
-  const expoData = data?.expo ?? []
+  const pageRef = useRef<HTMLDivElement>(null)
+  const expoData = useFilteredData(data?.expo, 'EXPO')
 
   const chartByPromotor = useMemo(() => {
     const map = expoData.reduce<Record<string, number>>((acc, d) => {
@@ -41,23 +42,23 @@ export function EXPOPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-text">EXPO Activations</h2>
-        <ExportButtons data={expoData} filename="EXPO" tableRef={tableRef} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard title="Total" value={formatNumber(expoData.length)} icon={<Megaphone className="h-5 w-5" />} />
-        <KPICard title="Promotors" value={formatNumber(new Set(expoData.map((d) => d.NamaPromotor)).size)} variant="success" icon={<Users className="h-5 w-5" />} />
-        <KPICard title="Locations" value={formatNumber(new Set(expoData.map((d) => d.ExpoName)).size)} variant="warning" icon={<Building2 className="h-5 w-5" />} />
-        <KPICard title="Packages" value={formatNumber(new Set(expoData.map((d) => d.PackagePlan)).size)} variant="default" icon={<Package className="h-5 w-5" />} />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BarChart title="By Promotor" data={chartByPromotor} index="name" categories={['Activations']} colors={['violet']} />
-        <BarChart title="By Expo Location" data={Object.entries(expoData.reduce<Record<string, number>>((acc, d) => { acc[d.ExpoName || 'Unknown'] = (acc[d.ExpoName || 'Unknown'] || 0) + 1; return acc }, {})).map(([n, v]) => ({ name: n, Activations: v })).sort((a, b) => b.Activations - a.Activations)} index="name" categories={['Activations']} colors={['cyan']} />
-      </div>
-      <PieChart title="Package Distribution" data={chartByPackage} />
-      <div ref={tableRef}>
+    <div ref={pageRef}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-text">EXPO Activations</h2>
+          <ExportButtons data={expoData} filename="EXPO" pageRef={pageRef} columns={columns} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KPICard title="Total" value={formatNumber(expoData.length)} icon={<Megaphone className="h-5 w-5" />} />
+          <KPICard title="Promotors" value={formatNumber(new Set(expoData.map((d) => d.NamaPromotor)).size)} variant="success" icon={<Users className="h-5 w-5" />} />
+          <KPICard title="Locations" value={formatNumber(new Set(expoData.map((d) => d.ExpoName)).size)} variant="warning" icon={<Building2 className="h-5 w-5" />} />
+          <KPICard title="Packages" value={formatNumber(new Set(expoData.map((d) => d.PackagePlan)).size)} variant="default" icon={<Package className="h-5 w-5" />} />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BarChart title="By Promotor" data={chartByPromotor} index="name" categories={['Activations']} colors={['violet']} />
+          <BarChart title="By Expo Location" data={Object.entries(expoData.reduce<Record<string, number>>((acc, d) => { acc[d.ExpoName || 'Unknown'] = (acc[d.ExpoName || 'Unknown'] || 0) + 1; return acc }, {})).map(([n, v]) => ({ name: n, Activations: v })).sort((a, b) => b.Activations - a.Activations)} index="name" categories={['Activations']} colors={['cyan']} />
+        </div>
+        <PieChart title="Package Distribution" data={chartByPackage} />
         <DataTable columns={columns} data={expoData} searchPlaceholder="Search EXPO..." compact />
       </div>
     </div>

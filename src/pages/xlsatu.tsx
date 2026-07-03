@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useStore } from '@/lib/store'
+import { useFilteredData } from '@/hooks/use-filtered-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { DataTable } from '@/components/tables/data-table'
@@ -11,8 +12,8 @@ import { Wifi, Store, Users, Globe } from 'lucide-react'
 
 export function XLSatuPage() {
   const { data } = useStore()
-  const tableRef = useRef<HTMLDivElement>(null)
-  const xlsatuData = data?.xlsatu ?? []
+  const pageRef = useRef<HTMLDivElement>(null)
+  const xlsatuData = useFilteredData(data?.xlsatu, 'XL Satu')
 
   const chartByStore = useMemo(() => {
     const map = xlsatuData.reduce<Record<string, number>>((acc, d) => {
@@ -41,21 +42,21 @@ export function XLSatuPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-text">XL Satu Home Broadband</h2>
-        <ExportButtons data={xlsatuData} filename="XL_Satu" tableRef={tableRef} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <KPICard title="Total Activations" value={formatNumber(xlsatuData.length)} icon={<Wifi className="h-5 w-5" />} />
-        <KPICard title="Active Stores" value={formatNumber(new Set(xlsatuData.map((d) => d.StoreName)).size)} variant="success" icon={<Store className="h-5 w-5" />} />
-        <KPICard title="CRRs" value={formatNumber(new Set(xlsatuData.map((d) => d.NamaCRR)).size)} variant="warning" icon={<Users className="h-5 w-5" />} />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BarChart title="By Store" data={chartByStore} index="name" categories={['Activations']} colors={['cyan']} />
-        <BarChart title="By CRR" data={chartByCRR} index="name" categories={['Activations']} colors={['teal']} />
-      </div>
-      <div ref={tableRef}>
+    <div ref={pageRef}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-text">XL Satu Home Broadband</h2>
+          <ExportButtons data={xlsatuData} filename="XL_Satu" pageRef={pageRef} columns={columns} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <KPICard title="Total Activations" value={formatNumber(xlsatuData.length)} icon={<Wifi className="h-5 w-5" />} />
+          <KPICard title="Active Stores" value={formatNumber(new Set(xlsatuData.map((d) => d.StoreName)).size)} variant="success" icon={<Store className="h-5 w-5" />} />
+          <KPICard title="CRRs" value={formatNumber(new Set(xlsatuData.map((d) => d.NamaCRR)).size)} variant="warning" icon={<Users className="h-5 w-5" />} />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BarChart title="By Store" data={chartByStore} index="name" categories={['Activations']} colors={['cyan']} />
+          <BarChart title="By CRR" data={chartByCRR} index="name" categories={['Activations']} colors={['teal']} />
+        </div>
         <DataTable columns={columns} data={xlsatuData} searchPlaceholder="Search XL Satu..." compact />
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useStore } from '@/lib/store'
+import { useFilteredData } from '@/hooks/use-filtered-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { DataTable } from '@/components/tables/data-table'
@@ -11,8 +12,8 @@ import { UserRound, MapPin, Users, DollarSign } from 'lucide-react'
 
 export function WOPage() {
   const { data } = useStore()
-  const tableRef = useRef<HTMLDivElement>(null)
-  const woData = data?.wo ?? []
+  const pageRef = useRef<HTMLDivElement>(null)
+  const woData = useFilteredData(data?.wo, 'WO')
 
   const totalRevenue = woData.reduce((s, d) => s + d.PricePlan, 0)
 
@@ -43,22 +44,22 @@ export function WOPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-text">WO Agent Activations</h2>
-        <ExportButtons data={woData} filename="WO_Agent" tableRef={tableRef} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard title="Total" value={formatNumber(woData.length)} icon={<UserRound className="h-5 w-5" />} />
-        <KPICard title="Agents" value={formatNumber(new Set(woData.map((d) => d.AgentWO)).size)} variant="success" icon={<Users className="h-5 w-5" />} />
-        <KPICard title="XLC Locations" value={formatNumber(new Set(woData.map((d) => d.XLCName)).size)} variant="warning" icon={<MapPin className="h-5 w-5" />} />
-        <KPICard title="Revenue" value={`Rp ${formatNumber(totalRevenue)}`} variant="default" icon={<DollarSign className="h-5 w-5" />} />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BarChart title="By Agent WO" data={chartByAgent} index="name" categories={['Activations']} colors={['red']} />
-        <BarChart title="By XLC Location" data={chartByXLC} index="name" categories={['Activations']} colors={['orange']} />
-      </div>
-      <div ref={tableRef}>
+    <div ref={pageRef}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-text">WO Agent Activations</h2>
+          <ExportButtons data={woData} filename="WO_Agent" pageRef={pageRef} columns={columns} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KPICard title="Total" value={formatNumber(woData.length)} icon={<UserRound className="h-5 w-5" />} />
+          <KPICard title="Agents" value={formatNumber(new Set(woData.map((d) => d.AgentWO)).size)} variant="success" icon={<Users className="h-5 w-5" />} />
+          <KPICard title="XLC Locations" value={formatNumber(new Set(woData.map((d) => d.XLCName)).size)} variant="warning" icon={<MapPin className="h-5 w-5" />} />
+          <KPICard title="Revenue" value={`Rp ${formatNumber(totalRevenue)}`} variant="default" icon={<DollarSign className="h-5 w-5" />} />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BarChart title="By Agent WO" data={chartByAgent} index="name" categories={['Activations']} colors={['red']} />
+          <BarChart title="By XLC Location" data={chartByXLC} index="name" categories={['Activations']} colors={['orange']} />
+        </div>
         <DataTable columns={columns} data={woData} searchPlaceholder="Search WO data..." compact />
       </div>
     </div>

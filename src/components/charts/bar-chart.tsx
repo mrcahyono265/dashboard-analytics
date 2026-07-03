@@ -17,6 +17,18 @@ interface BarChartProps {
 
 const defaultFormatter = (v: number) => formatCompact(v)
 const CHART_COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)', 'var(--color-chart-6)']
+const COLOR_ALIAS: Record<string, string> = {
+  blue: 'var(--color-chart-1)',
+  emerald: 'var(--color-chart-2)',
+  violet: 'var(--color-chart-3)',
+  orange: 'var(--color-chart-4)',
+  rose: 'var(--color-chart-5)',
+  cyan: 'var(--color-chart-6)',
+  amber: 'var(--color-chart-1)',
+  red: 'var(--color-chart-2)',
+  teal: 'var(--color-chart-3)',
+  gray: 'var(--color-chart-4)',
+}
 
 export function BarChart({
   title, data, categories, index,
@@ -27,6 +39,7 @@ export function BarChart({
 }: BarChartProps) {
   if (!data.length) return null
   const isHorizontal = layout === 'horizontal'
+  const resolvedColors = colors.map((c) => COLOR_ALIAS[c] || c)
 
   return (
     <Card>
@@ -57,7 +70,7 @@ export function BarChart({
             />
             {categories.length > 1 && <Legend />}
             {categories.map((cat, i) => (
-              <Bar key={cat} dataKey={cat} fill={colors[i % colors.length]} radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar key={cat} dataKey={cat} fill={resolvedColors[i % resolvedColors.length]} radius={[4, 4, 0, 0]} maxBarSize={40} />
             ))}
           </RechartsBarChart>
         </ResponsiveContainer>
