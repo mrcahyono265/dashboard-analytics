@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '@/lib/store'
 import type { FilterState } from '@/lib/store'
+import { logger } from '@/lib/logger'
 
 export function applyFilters<T extends Record<string, any>>(
   data: T[],
@@ -37,6 +38,15 @@ export function useFilteredData<T extends Record<string, any>>(
     if (channel && filters.channel.length > 0) {
       if (!filters.channel.includes(channel)) return []
     }
-    return applyFilters(data ?? [], filters)
+    const result = applyFilters(data ?? [], filters)
+    if (import.meta.env.DEV && data && data.length !== result.length) {
+      logger.debug('filter', `Filtered ${data.length} → ${result.length} items`, {
+        channel,
+        activeFilters: Object.entries(filters)
+          .filter(([, v]) => v.length > 0)
+          .map(([k, v]) => `${k}=${v.join(',')}`),
+      })
+    }
+    return result
   }, [data, filters, channel])
 }
