@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { DashboardData } from './data'
+import type { TimeMode } from './date-parser'
 
 export interface FilterState {
   bulan: string[]
@@ -9,18 +10,27 @@ export interface FilterState {
   channel: string[]
 }
 
+export interface DateRange {
+  from: string
+  to: string
+}
+
 interface AppState {
   data: DashboardData | null
   loading: boolean
   error: string | null
   filters: FilterState
   dataSource: 'excel' | 'google'
+  timeMode: TimeMode
+  customDateRange: DateRange | null
   setData: (data: DashboardData) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   setFilter: (key: keyof FilterState, values: string[]) => void
   resetFilters: () => void
   setDataSource: (source: 'excel' | 'google') => void
+  setTimeMode: (mode: TimeMode) => void
+  setCustomDateRange: (range: DateRange | null) => void
 }
 
 const defaultFilters: FilterState = {
@@ -37,6 +47,8 @@ export const useStore = create<AppState>((set) => ({
   error: null,
   filters: defaultFilters,
   dataSource: 'excel',
+  timeMode: 'monthly',
+  customDateRange: null,
   setData: (data) => set({ data, loading: false, error: null }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error, loading: false }),
@@ -46,4 +58,6 @@ export const useStore = create<AppState>((set) => ({
     })),
   resetFilters: () => set({ filters: defaultFilters }),
   setDataSource: (source) => set({ dataSource: source }),
+  setTimeMode: (mode) => set({ timeMode: mode }),
+  setCustomDateRange: (range) => set({ customDateRange: range }),
 }))

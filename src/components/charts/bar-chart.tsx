@@ -3,6 +3,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCompact } from '@/lib/utils'
+import { CHART_COLORS, COLOR_ALIAS, CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, AXIS_LINE_STYLE } from '@/lib/chart-config'
 
 interface BarChartProps {
   title: string
@@ -16,19 +17,6 @@ interface BarChartProps {
 }
 
 const defaultFormatter = (v: number) => formatCompact(v)
-const CHART_COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)', 'var(--color-chart-6)']
-const COLOR_ALIAS: Record<string, string> = {
-  blue: 'var(--color-chart-1)',
-  emerald: 'var(--color-chart-2)',
-  violet: 'var(--color-chart-3)',
-  orange: 'var(--color-chart-4)',
-  rose: 'var(--color-chart-5)',
-  cyan: 'var(--color-chart-6)',
-  amber: 'var(--color-chart-1)',
-  red: 'var(--color-chart-2)',
-  teal: 'var(--color-chart-3)',
-  gray: 'var(--color-chart-4)',
-}
 
 export function BarChart({
   title, data, categories, index,
@@ -44,33 +32,35 @@ export function BarChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-text">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={height}>
           <RechartsBarChart data={data} layout={isHorizontal ? 'vertical' : 'horizontal'} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={!isHorizontal} horizontal={isHorizontal} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={!isHorizontal} horizontal={isHorizontal} />
             {isHorizontal ? (
               <>
-                <XAxis type="number" tick={{ fill: 'var(--color-text-tertiary)', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(v: number) => valueFormatter(v)} />
-                <YAxis type="category" dataKey={index} tick={{ fill: 'var(--color-text-tertiary)', fontSize: 12 }} tickLine={false} axisLine={{ stroke: 'var(--color-border)' }} width={120} />
+                <XAxis type="number" tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => valueFormatter(v)} />
+                <YAxis type="category" dataKey={index} tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12 }} tickLine={false} axisLine={{ stroke: 'var(--color-outline-variant)' }} width={120} />
               </>
             ) : (
               <>
-                <XAxis dataKey={index} tick={{ fill: 'var(--color-text-tertiary)', fontSize: 12 }} tickLine={false} axisLine={{ stroke: 'var(--color-border)' }} />
-                <YAxis tick={{ fill: 'var(--color-text-tertiary)', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(v: number) => valueFormatter(v)} width={50} />
+                <XAxis dataKey={index} tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12 }} tickLine={false} axisLine={{ stroke: 'var(--color-outline-variant)' }} />
+                <YAxis tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => valueFormatter(v)} width={50} />
               </>
             )}
             <Tooltip
               contentStyle={{
-                borderRadius: '8px', border: '1px solid var(--color-border)',
-                background: 'var(--color-surface)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                borderRadius: '12px',
+                border: '1px solid var(--color-outline-variant)',
+                background: 'var(--color-surface)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               }}
               formatter={(value: any) => [valueFormatter(Number(value) || 0)]}
             />
             {categories.length > 1 && <Legend />}
             {categories.map((cat, i) => (
-              <Bar key={cat} dataKey={cat} fill={resolvedColors[i % resolvedColors.length]} radius={[4, 4, 0, 0]} maxBarSize={40} />
+              <Bar key={cat} dataKey={cat} fill={resolvedColors[i % resolvedColors.length]} radius={[6, 6, 0, 0]} maxBarSize={40} />
             ))}
           </RechartsBarChart>
         </ResponsiveContainer>

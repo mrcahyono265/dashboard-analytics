@@ -1,7 +1,5 @@
 import { NavLink, useLocation, matchPath } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   LayoutDashboard,
@@ -17,19 +15,27 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart3,
+  FileText,
+  Activity,
+  Upload,
+  Settings,
+  LogOut,
 } from "lucide-react";
-import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 const navGroups = [
   {
     label: "Overview",
-    items: [{ to: "/", label: "Overview", icon: LayoutDashboard }],
+    items: [
+      { to: "/", label: "Overview", icon: LayoutDashboard },
+      { to: "/monitoring", label: "Monitoring", icon: Activity },
+    ],
   },
   {
     label: "Channels",
     items: [
-      { to: "/xlc", label: "XLC", icon: Smartphone },
-      { to: "/gsf", label: "GSF", icon: CreditCard },
+      { to: "/xlc", label: "XLC Channel", icon: Smartphone },
+      { to: "/gsf", label: "GSF Revenue", icon: CreditCard },
       { to: "/merchant", label: "Merchant", icon: Store },
       { to: "/wo", label: "WO Agent", icon: UserRound },
       { to: "/expo", label: "EXPO", icon: Megaphone },
@@ -39,9 +45,10 @@ const navGroups = [
   {
     label: "Reports",
     items: [
+      { to: "/target", label: "Target vs Realisasi", icon: Target },
+      { to: "/reporting", label: "Reporting", icon: FileText },
       { to: "/elite", label: "ELITE", icon: Trophy },
       { to: "/promotor", label: "Promotor", icon: Users },
-      { to: "/target", label: "Target", icon: Target },
     ],
   },
 ];
@@ -49,6 +56,7 @@ const navGroups = [
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  onUploadClick?: () => void;
 }
 
 function NavItem({
@@ -68,19 +76,13 @@ function NavItem({
     <NavLink
       to={to}
       className={cn(
-        "rounded-lg text-sm font-medium transition-all duration-150",
-        collapsed
-          ? "flex items-center w-full py-2.5"
-          : "flex items-center gap-3 px-3 py-2.5",
+        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 group",
+        collapsed && "justify-center px-0",
         isActive
-          ? collapsed
-            ? "bg-blue-500 text-white dark:bg-sidebar-active dark:text-primary"
-            : "bg-sidebar-active text-primary border-l-[3px] border-primary pl-[calc(0.75rem-3px)]"
-          : collapsed
-            ? "text-text-secondary hover:bg-sidebar-hover hover:text-text"
-            : "text-text-secondary hover:bg-sidebar-hover hover:text-text border-l-[3px] border-transparent pl-[calc(0.75rem-3px)]",
+          ? "bg-primary-container/20 text-primary border-l-4 border-primary font-bold rounded-r-xl"
+          : "text-on-surface-variant hover:bg-surface-container-high border-l-4 border-transparent",
       )}>
-      <Icon className={cn("h-5 w-5 shrink-0", collapsed && "m-auto")} />
+      <Icon className={cn("h-5 w-5 shrink-0", isActive && "text-primary")} />
       {!collapsed && <span>{label}</span>}
     </NavLink>
   );
@@ -92,9 +94,9 @@ function NavItem({
         <Tooltip.Portal>
           <Tooltip.Content
             side="right"
-            className="bg-surface border border-border text-text text-xs rounded-md px-2.5 py-1.5 shadow-md z-50">
+            className="bg-surface border border-outline-variant text-on-surface text-xs rounded-xl px-3 py-2 shadow-lg z-50 font-medium">
             {label}
-            <Tooltip.Arrow className="fill-border" />
+            <Tooltip.Arrow className="fill-surface" />
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -104,98 +106,107 @@ function NavItem({
   return content;
 }
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, onUploadClick }: SidebarProps) {
   const location = useLocation();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    Overview: true,
-    Channels: true,
-    Reports: true,
-  });
+  const { logout } = useAuth();
 
   return (
     <aside
       className={cn(
-        "flex flex-col border-r border-border bg-sidebar transition-all duration-300 z-30",
-        collapsed ? "w-16" : "w-60",
+        "flex flex-col h-full z-40 fixed left-0 top-0 border-r border-outline-variant bg-surface transition-all duration-300",
+        collapsed ? "w-16" : "w-sidebar-width",
       )}>
-      <div
-        className={cn(
-          "flex h-16 items-center border-b border-border shrink-0",
-          collapsed ? "justify-center" : "px-4",
-        )}>
-        <div
-          className={cn(
-            "flex items-center rounded-lg bg-primary",
-            collapsed ? "h-8 w-8 justify-center" : "h-8 gap-2.5 px-2",
-          )}>
-          <BarChart3 className="h-4 w-4 text-white shrink-0" />
+      {/* Logo */}
+      <div className={cn("flex items-center gap-3 shrink-0", collapsed ? "px-3 py-6 justify-center" : "px-6 py-6")}>
+        <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container shadow-lg shadow-primary-container/20 shrink-0">
+          <BarChart3 className="h-5 w-5" />
+        </div>
+        {!collapsed && (
+          <div>
+            <h1 className="text-primary font-headline font-bold text-lg leading-tight">Prio Dashboard</h1>
+            <p className="text-on-surface-variant text-[10px] uppercase tracking-widest font-bold">Sales Analytics</p>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 mt-4 px-3 space-y-2 overflow-y-auto">
+        <Tooltip.Provider delayDuration={300}>
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              {!collapsed && (
+                <p className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const isActive =
+                    matchPath({ path: item.to, end: true }, location.pathname) !== null;
+                  return (
+                    <NavItem
+                      key={item.to}
+                      {...item}
+                      collapsed={collapsed}
+                      isActive={isActive}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </Tooltip.Provider>
+      </nav>
+
+      {/* Bottom Section */}
+      <div className={cn("border-t border-outline-variant/30 shrink-0", collapsed ? "p-2" : "p-4")}>
+        {!collapsed && (
+          <button
+            onClick={onUploadClick}
+            className="w-full mb-4 bg-primary-container text-on-primary-container py-2.5 rounded-2xl font-bold text-sm hover:brightness-110 transition-all shadow-lg shadow-primary-container/20 flex items-center justify-center gap-2">
+            <Upload className="h-4 w-4" />
+            Upload Data
+          </button>
+        )}
+        <div className="space-y-1">
           {!collapsed && (
             <>
-              <div className="h-4 w-[1px] bg-white/30" />
-              <span className="text-xs font-semibold text-white">Prio</span>
+              <button className="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-xl w-full text-sm font-medium">
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </button>
+              <button
+                onClick={logout}
+                className="flex items-center gap-3 px-4 py-2.5 text-error hover:bg-error-container/20 transition-all rounded-xl w-full text-sm font-medium">
+                <LogOut className="h-5 w-5" />
+                <span>Logout</span>
+              </button>
             </>
           )}
-        </div>
-      </div>
-
-      <div
-        className={cn("flex-1 overflow-y-auto", collapsed ? "p-1.5" : "p-2")}>
-        <div className="space-y-4">
-          <Tooltip.Provider delayDuration={300}>
-            {navGroups.map((group) => (
-              <Collapsible.Root
-                key={group.label}
-                open={collapsed ? true : openGroups[group.label]}
-                onOpenChange={(open) =>
-                  setOpenGroups((prev) => ({ ...prev, [group.label]: open }))
-                }>
-                {!collapsed && (
-                  <Collapsible.Trigger asChild>
-                    <button className="flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary hover:text-text-secondary transition-colors">
-                      {group.label}
-                    </button>
-                  </Collapsible.Trigger>
-                )}
-                <Collapsible.Content className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const isActive =
-                      matchPath(
-                        { path: item.to, end: true },
-                        location.pathname,
-                      ) !== null;
-                    return (
-                      <NavItem
-                        key={item.to}
-                        {...item}
-                        collapsed={collapsed}
-                        isActive={isActive}
-                      />
-                    );
-                  })}
-                </Collapsible.Content>
-              </Collapsible.Root>
-            ))}
-          </Tooltip.Provider>
-        </div>
-      </div>
-
-      <div
-        className={cn(
-          "border-t border-border p-2 shrink-0",
-          collapsed ? "flex justify-center" : "",
-        )}>
-        <Button
-          variant="ghost"
-          size={collapsed ? "icon" : "sm"}
-          onClick={onToggle}
-          className={collapsed ? "" : "w-full justify-center"}>
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
+          {collapsed && (
+            <div className="flex flex-col items-center gap-2">
+              <button onClick={onUploadClick} className="p-2 bg-primary-container text-on-primary-container rounded-xl">
+                <Upload className="h-4 w-4" />
+              </button>
+              <button onClick={logout} className="p-2 text-error hover:bg-error-container/20 rounded-xl">
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           )}
-          {!collapsed && <span className="text-xs">Collapse</span>}
-        </Button>
+        </div>
+      </div>
+
+      {/* Collapse Toggle */}
+      <div className={cn("border-t border-outline-variant p-2 shrink-0", collapsed && "flex justify-center")}>
+        <button
+          onClick={onToggle}
+          className={cn(
+            "flex items-center gap-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all rounded-xl p-2",
+            collapsed && "justify-center",
+          )}>
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {!collapsed && <span className="text-xs font-medium">Collapse</span>}
+        </button>
       </div>
     </aside>
   );

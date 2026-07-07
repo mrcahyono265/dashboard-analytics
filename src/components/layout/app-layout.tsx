@@ -3,15 +3,18 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { FilterBar, type FilterOption } from '@/components/filters/filter-bar'
+import { TimeFilter } from '@/components/filters/time-filter'
+import { LogViewer } from '@/components/dev/log-viewer'
 import { useDataLoader } from '@/hooks/use-data'
 import { useStore } from '@/lib/store'
 import { Toaster } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
+import { getTimeLabel } from '@/lib/constants'
 
 const pageTitles: Record<string, string> = {
-  '/': 'Overview',
-  '/xlc': 'XLC Activation',
-  '/gsf': 'GSF Transactions',
+  '/': 'Overview Analytics',
+  '/xlc': 'XLC Channel Analytics',
+  '/gsf': 'GSF Revenue',
   '/merchant': 'Merchant Activations',
   '/wo': 'WO Agent Activations',
   '/expo': 'EXPO Activations',
@@ -19,6 +22,23 @@ const pageTitles: Record<string, string> = {
   '/elite': 'ELITE Performance',
   '/promotor': 'Promotor Performance',
   '/target': 'Target vs Realisasi',
+  '/reporting': 'Reporting',
+  '/monitoring': 'Monitoring',
+}
+
+const pageSubtitles: Record<string, string> = {
+  '/': 'Real-time performance tracking for all channels.',
+  '/xlc': 'Real-time performance tracking for XLC distribution channels.',
+  '/gsf': 'Transaction and revenue tracking for GSF.',
+  '/merchant': 'Merchant activation tracking.',
+  '/wo': 'WO Agent activation tracking.',
+  '/expo': 'EXPO activation tracking.',
+  '/xlsatu': 'XL Satu Home Broadband tracking.',
+  '/elite': 'Operator comparison performance.',
+  '/promotor': 'Promotor performance tracking.',
+  '/target': 'Target achievement vs realisasi.',
+  '/reporting': 'Comprehensive reporting dashboard.',
+  '/monitoring': 'Live monitoring with progress indicators.',
 }
 
 export function AppLayout() {
@@ -27,6 +47,7 @@ export function AppLayout() {
   const { loading, loadFromExcel, loadFromGoogleSheets } = useDataLoader()
   const { data } = useStore()
   const location = useLocation()
+  const timeMode = useStore((s) => s.timeMode)
 
   const filterOptions: FilterOption[] = [
     {
@@ -57,11 +78,28 @@ export function AppLayout() {
   ]
 
   const currentTitle = pageTitles[location.pathname] || 'Dashboard'
+  const currentSubtitle = pageSubtitles[location.pathname] || ''
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onUploadClick={() => {
+          const input = document.createElement('input')
+          input.type = 'file'
+          input.accept = '.xlsx,.xls'
+          input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0]
+            if (file) loadFromExcel(file)
+          }
+          input.click()
+        }}
+      />
+
+      {/* Main Wrapper */}
+      <div className="ml-sidebar-width flex flex-col min-h-screen">
+        {/* Header */}
         <Header
           title={currentTitle}
           loading={loading}
@@ -72,27 +110,56 @@ export function AppLayout() {
             if (url) loadFromGoogleSheets(url)
           }}
         />
-        <FilterBar
-          open={filterOpen}
-          options={filterOptions}
-          onClose={() => setFilterOpen(false)}
-        />
-        <main className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="p-6"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+
+        {/* Page Content */}
+        <main className="mt-header-height flex-1 bg-background">
+          <div className="p-container-padding">
+            {/* Page Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+              <div className="flex items-center gap-4">
+                <div>
+                  <h2 className="text-2xl font-headline font-bold text-on-surface">{currentTitle}</h2>
+                  {currentSubtitle && (
+                    <p className="text-on-surface-variant text-sm mt-0.5">{currentSubtitle}</p>
+                  )}
+                </div>
+                <TimeFilter />
+              </div>
+            </div>
+
+            {/* Filter Bar */}
+            <FilterBar
+              open={filterOpen}
+              options={filterOptions}
+              onClose={() => setFilterOpen(false)}
+            />
+
+            {/* Page Content */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Footer */}
+            <footer className="flex items-center justify-between py-8 mt-8 border-t border-outline-variant">
+              <p className="text-xs text-on-surface-variant">Data last updated: Today at 08:45 AM (GMT+7)</p>
+              <p className="text-[10px] font-label text-on-surface-variant uppercase font-bold tracking-widest">
+                Prio Dashboard v1.0
+              </p>
+            </footer>
+          </div>
         </main>
       </div>
+
       <Toaster position="top-right" richColors closeButton />
+      <LogViewer />
     </div>
   )
 }

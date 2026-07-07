@@ -3,6 +3,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCompact } from '@/lib/utils'
+import { CHART_COLORS, CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, AXIS_LINE_STYLE } from '@/lib/chart-config'
 
 interface AreaChartProps {
   title: string
@@ -15,7 +16,6 @@ interface AreaChartProps {
 }
 
 const defaultFormatter = (v: number) => formatCompact(v)
-const CHART_COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)', 'var(--color-chart-6)']
 
 export function AreaChart({
   title, data, categories, index,
@@ -28,7 +28,7 @@ export function AreaChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-text">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={height}>
@@ -41,13 +41,15 @@ export function AreaChart({
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-            <XAxis dataKey={index} tick={{ fill: 'var(--color-text-tertiary)', fontSize: 12 }} tickLine={false} axisLine={{ stroke: 'var(--color-border)' }} />
-            <YAxis tick={{ fill: 'var(--color-text-tertiary)', fontSize: 12 }} tickLine={false} axisLine={false} tickFormatter={(v: number) => valueFormatter(v)} width={50} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={false} />
+            <XAxis dataKey={index} tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12 }} tickLine={false} axisLine={{ stroke: 'var(--color-outline-variant)' }} />
+            <YAxis tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => valueFormatter(v)} width={50} />
             <Tooltip
               contentStyle={{
-                borderRadius: '8px', border: '1px solid var(--color-border)',
-                background: 'var(--color-surface)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                borderRadius: '12px',
+                border: '1px solid var(--color-outline-variant)',
+                background: 'var(--color-surface)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               }}
               formatter={(value: any) => [valueFormatter(Number(value) || 0)]}
             />
@@ -61,7 +63,7 @@ export function AreaChart({
                 fill={`url(#area-${cat})`}
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4, strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 2, stroke: 'var(--color-surface)' }}
               />
             ))}
           </RechartsAreaChart>

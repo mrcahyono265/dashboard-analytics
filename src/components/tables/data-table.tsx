@@ -40,27 +40,27 @@ export function DataTable<TData extends Record<string, any>>({
     <div className="space-y-3">
       {searchable && (
         <div className="relative max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
           <input
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm outline-none placeholder:text-text-tertiary focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            className="h-10 w-full rounded-2xl border border-outline-variant bg-surface-container-low pl-10 pr-4 text-sm outline-none placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary text-on-surface transition-all"
           />
         </div>
       )}
-      <div className="overflow-auto rounded-lg border border-border">
+      <div className="overflow-auto rounded-2xl border border-outline-variant shadow-sm">
         <table className="w-full">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-border bg-muted/50">
+              <tr key={headerGroup.id} className="border-b border-outline-variant bg-surface-container-low text-on-surface-variant">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
                     className={cn(
-                      'px-4 text-left text-xs font-semibold text-text-tertiary uppercase tracking-wider',
-                      compact ? 'py-2.5' : 'py-3',
-                      header.column.getCanSort() && 'cursor-pointer select-none hover:bg-muted'
+                      'px-6 text-left text-[10px] font-bold uppercase tracking-widest',
+                      compact ? 'py-3' : 'py-4',
+                      header.column.getCanSort() && 'cursor-pointer select-none hover:bg-surface-container-high transition-colors'
                     )}
                     onClick={header.column.getToggleSortingHandler()}
                   >
@@ -78,10 +78,10 @@ export function DataTable<TData extends Record<string, any>>({
               </tr>
             ))}
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-outline-variant">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-text-secondary">
+                <td colSpan={columns.length} className="px-6 py-12 text-center text-sm text-on-surface-variant">
                   No data found
                 </td>
               </tr>
@@ -90,13 +90,12 @@ export function DataTable<TData extends Record<string, any>>({
                 <tr
                   key={row.id}
                   className={cn(
-                    'border-b border-border transition-colors hover:bg-muted/30',
-                    i % 2 === 0 ? 'bg-surface' : 'bg-surface-subtle/30',
+                    'transition-all hover:bg-surface-container-high/50 cursor-pointer group',
                     compact ? 'last:border-b-0' : ''
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className={cn('px-4 text-sm text-text', compact ? 'py-2' : 'py-3')}>
+                    <td key={cell.id} className={cn('px-6 text-sm text-on-surface', compact ? 'py-2.5' : 'py-5')}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -106,37 +105,50 @@ export function DataTable<TData extends Record<string, any>>({
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between text-sm text-text-secondary">
+      <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-on-surface-variant">
         <span>
           {table.getFilteredRowModel().rows.length} results
           {table.getRowModel().rows.length < data.length && (
-            <span className="text-text-tertiary ml-1">
+            <span className="text-on-surface-variant/60 ml-1">
               (showing {table.getRowModel().rows.length})
             </span>
           )}
         </span>
-        <div className="flex items-center gap-1.5">
-          <Button variant="outline" size="xs" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </Button>
-          {Array.from({ length: Math.min(table.getPageCount(), 5) }, (_, i) => {
-            const page = Math.max(0, Math.min(table.getState().pagination.pageIndex - 2, table.getPageCount() - 5)) + i
-            if (page >= table.getPageCount()) return null
-            return (
-              <Button
-                key={page}
-                variant={table.getState().pagination.pageIndex === page ? 'primary' : 'outline'}
-                size="xs"
-                onClick={() => table.setPageIndex(page)}
-                className="min-w-[28px]"
-              >
-                {page + 1}
-              </Button>
-            )
-          })}
-          <Button variant="outline" size="xs" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="p-2 bg-surface-container-high border border-outline-variant rounded-xl hover:bg-surface-container-highest transition-all disabled:opacity-30"
+          >
+            <ChevronLeft className="h-4 w-4 text-on-surface" />
+          </button>
+          <div className="flex gap-1">
+            {Array.from({ length: Math.min(table.getPageCount(), 5) }, (_, i) => {
+              const page = Math.max(0, Math.min(table.getState().pagination.pageIndex - 2, table.getPageCount() - 5)) + i
+              if (page >= table.getPageCount()) return null
+              return (
+                <button
+                  key={page}
+                  onClick={() => table.setPageIndex(page)}
+                  className={cn(
+                    'w-10 h-10 rounded-xl font-bold text-sm transition-all',
+                    table.getState().pagination.pageIndex === page
+                      ? 'bg-primary-container text-on-primary-container shadow-lg shadow-primary-container/10'
+                      : 'hover:bg-surface-container-high text-on-surface'
+                  )}
+                >
+                  {page + 1}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="p-2 bg-surface-container-high border border-outline-variant rounded-xl hover:bg-surface-container-highest transition-all disabled:opacity-30"
+          >
+            <ChevronRight className="h-4 w-4 text-on-surface" />
+          </button>
         </div>
       </div>
     </div>

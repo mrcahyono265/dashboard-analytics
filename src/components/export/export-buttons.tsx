@@ -31,12 +31,12 @@ function formatCellValue(col: any, item: Record<string, any>): string {
 function buildTableHtml(columns: any[], data: Record<string, any>[]): string {
   const headers = columns.map((col) => {
     const h = typeof col.header === 'string' ? col.header : (col.accessorKey || '')
-    return `<th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;border-bottom:1px solid #e2e8f0;background:#f1f5f9">${h}</th>`
+    return `<th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;border-bottom:1px solid #434655;background:#171f33;color:#c3c6d7">${h}</th>`
   }).join('')
   const rows = data.map((item) => {
     const cells = columns.map((col) => {
       const v = formatCellValue(col, item)
-      return `<td style="padding:6px 12px;font-size:12px;border-bottom:1px solid #f1f5f9">${v}</td>`
+      return `<td style="padding:6px 12px;font-size:12px;border-bottom:1px solid #222a3d;color:#dae2fd;font-family:'JetBrains Mono',monospace">${v}</td>`
     }).join('')
     return `<tr>${cells}</tr>`
   }).join('')
@@ -69,10 +69,10 @@ export function ExportButtons({ data, filename = 'export', columns, pageRef, tab
 
   const captureSection = async (html2canvas: any, el: HTMLElement): Promise<string> => {
     const wrapper = document.createElement('div')
-    wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:1200px;background:#f8fafc;padding:24px'
+    wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:1200px;background:#0b1326;padding:24px'
     wrapper.appendChild(el)
     document.body.appendChild(wrapper)
-    const canvas = await html2canvas(wrapper, { scale: 2, useCORS: true, logging: false, backgroundColor: '#f8fafc' })
+    const canvas = await html2canvas(wrapper, { scale: 2, useCORS: true, logging: false, backgroundColor: '#0b1326' })
     document.body.removeChild(wrapper)
     return canvas.toDataURL('image/png')
   }
@@ -115,7 +115,7 @@ export function ExportButtons({ data, filename = 'export', columns, pageRef, tab
       searchBar?.remove()
       pagination?.remove()
 
-      const tableContainer = clone.querySelector('.overflow-auto.rounded-lg')
+      const tableContainer = clone.querySelector('.overflow-auto.rounded-2xl')
       if (tableContainer && columns && data.length > 0) {
         tableContainer.innerHTML = buildTableHtml(columns, data)
       }
@@ -169,16 +169,29 @@ export function ExportButtons({ data, filename = 'export', columns, pageRef, tab
 
   if (variant === 'row') {
     return (
-      <div className="flex items-center gap-1.5">
-        <Button variant="outline" size="xs" onClick={exportToExcel}>
-          <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
-        </Button>
-        <Button variant="outline" size="xs" onClick={exportToCSV}>
-          <FileDown className="h-3.5 w-3.5" /> CSV
-        </Button>
-        <Button variant="outline" size="xs" onClick={exportToPDF}>
-          <FileText className="h-3.5 w-3.5" /> PDF
-        </Button>
+      <div className="flex items-center gap-3">
+        <span className="text-[10px] font-label text-on-surface-variant uppercase font-bold tracking-widest mr-2">Export Report</span>
+        <button
+          onClick={exportToExcel}
+          className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-2xl bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-bold text-on-surface"
+        >
+          <FileSpreadsheet className="h-[18px] w-[18px]" />
+          Excel
+        </button>
+        <button
+          onClick={exportToCSV}
+          className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-2xl bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-bold text-on-surface"
+        >
+          <FileDown className="h-[18px] w-[18px]" />
+          CSV
+        </button>
+        <button
+          onClick={exportToPDF}
+          className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-2xl bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-bold text-on-surface"
+        >
+          <FileText className="h-[18px] w-[18px]" />
+          PDF
+        </button>
       </div>
     )
   }
@@ -191,15 +204,15 @@ export function ExportButtons({ data, filename = 'export', columns, pageRef, tab
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-lg border border-border bg-surface shadow-lg overflow-hidden">
-            <button onClick={() => { exportToExcel(); setOpen(false) }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-text hover:bg-muted transition-colors">
-              <FileSpreadsheet className="h-4 w-4 text-success" /> Excel
+          <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-2xl border border-outline-variant bg-surface shadow-xl overflow-hidden">
+            <button onClick={() => { exportToExcel(); setOpen(false) }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-on-surface hover:bg-surface-container-high transition-colors">
+              <FileSpreadsheet className="h-4 w-4 text-secondary" /> Excel
             </button>
-            <button onClick={() => { exportToCSV(); setOpen(false) }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-text hover:bg-muted transition-colors">
+            <button onClick={() => { exportToCSV(); setOpen(false) }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-on-surface hover:bg-surface-container-high transition-colors">
               <FileDown className="h-4 w-4 text-primary" /> CSV
             </button>
-            <button onClick={() => { exportToPDF(); setOpen(false) }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-text hover:bg-muted transition-colors">
-              <FileText className="h-4 w-4 text-danger" /> PDF
+            <button onClick={() => { exportToPDF(); setOpen(false) }} className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-on-surface hover:bg-surface-container-high transition-colors">
+              <FileText className="h-4 w-4 text-error" /> PDF
             </button>
           </div>
         </>

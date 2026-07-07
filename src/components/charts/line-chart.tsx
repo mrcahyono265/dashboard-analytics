@@ -23,30 +23,20 @@ export function LineChart({ title, data, xKey, lines, height = 350 }: LineChartP
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={height}>
           <RechartsLineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis
-              dataKey={xKey}
-              tick={{ fill: 'var(--color-text-tertiary)', fontSize: 12 }}
-              tickLine={false}
-              axisLine={{ stroke: 'var(--color-border)' }}
-            />
-            <YAxis
-              tick={{ fill: 'var(--color-text-tertiary)', fontSize: 12 }}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(v: number) => formatCompact(v)}
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" />
+            <XAxis dataKey={xKey} tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12 }} tickLine={false} axisLine={{ stroke: 'var(--color-outline-variant)' }} />
+            <YAxis tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12, fontFamily: 'JetBrains Mono' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => formatCompact(v)} />
             <Tooltip
               contentStyle={{
-                borderRadius: '8px',
-                border: '1px solid var(--color-border)',
+                borderRadius: '12px',
+                border: '1px solid var(--color-outline-variant)',
                 background: 'var(--color-surface)',
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               }}
               formatter={(value: any) => [formatCompact(Number(value) || 0)]}
             />
@@ -59,8 +49,8 @@ export function LineChart({ title, data, xKey, lines, height = 350 }: LineChartP
                 name={l.name}
                 stroke={l.color}
                 strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
+                dot={{ r: 3, fill: l.color, strokeWidth: 0 }}
+                activeDot={{ r: 5, strokeWidth: 2, stroke: 'var(--color-surface)' }}
               />
             ))}
           </RechartsLineChart>
