@@ -1,23 +1,31 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useStore } from '@/lib/store'
+import { useFilteredData } from '@/hooks/use-filtered-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { DataTable } from '@/components/tables/data-table'
+import { ExportButtons } from '@/components/export/export-buttons'
 import { formatNumber, formatCompact } from '@/lib/utils'
-import { useFilteredData } from '@/hooks/use-filtered-data'
+import {
+  CHANNEL_TARGETS, getTargetStatus, getTargetStatusLabel,
+  getTargetStatusVariant, computeTargetPercentage,
+} from '@/lib/constants'
+import type { ColumnDef } from '@tanstack/react-table'
+import { Target } from 'lucide-react'
 
-const TARGETS: Record<string, number> = {
-  XLC: 500,
-  GSF: 300_000_000,
-  Merchant: 50,
-  WO: 100,
-  EXPO: 200,
-  XLSatu: 20,
+interface TargetRow {
+  channel: string
+  target: number
+  actual: number
+  gap: number
+  percentage: number
+  status: ReturnType<typeof getTargetStatus>
 }
 
 export function TargetPage() {
   const { data } = useStore()
+  const pageRef = useRef<HTMLDivElement>(null)
 
   const filteredXlc = useFilteredData(data?.xlc, 'XLC')
   const filteredGsf = useFilteredData(data?.gsf, 'GSF')
@@ -26,151 +34,108 @@ export function TargetPage() {
   const filteredExpo = useFilteredData(data?.expo, 'EXPO')
   const filteredXlsatu = useFilteredData(data?.xlsatu, 'XL Satu')
 
-  const actuals = {
-    XLC: filteredXlc.length,
-    GSF: filteredGsf.reduce((s, d) => s + d.Amount, 0),
-    Merchant: filteredMerchant.length,
-    WO: filteredWo.length,
-    EXPO: filteredExpo.length,
-    XLSatu: filteredXlsatu.length,
-  }
+  const targetRows = useMemo((): TargetRow[] => {
+    const actuals: Record<string, number> = {
+      XLC: filteredXlc.length,
+      GSF: filteredGsf.reduce((s, d) => s + d.Amount, 0),
+      Merchant: filteredMerchant.length,
+      WO: filteredWo.length,
+      EXPO: filteredExpo.length,
+      'XL Satu': filteredXlsatu.length,
+    }
 
-  const chartData = useMemo(() => {
-    if (!data) return []
-    return Object.keys(TARGETS).map((key) => ({
-      name: key,
-      Target: key === 'GSF' ? Math.round(TARGETS[key] / 1_000_000) : TARGETS[key],
-      Realisasi: key === 'GSF' ? Math.round(actuals.GSF / 1_000_000) : actuals[key as keyof typeof actuals],
-    }))
-  }, [data, actuals])
+    return Object.entries(CHANNEL_TARGETS).map(([channel, target]) => {
+      const actual = actuals[channel] ?? 0
+      const percentage = computeTargetPercentage(actual, target)
+      const status = getTargetStatus(percentage)
+      return { channel, target, actual, gap: target - actual, percentage, status }
+    })
+  }, [filteredXlc, filteredGsf, filteredMerchant, filteredWo, filteredExpo, filteredXlsatu])
 
   const overallAchievement = useMemo(() => {
-    if (!data) return 0
-    const keys = Object.keys(TARGETS)
-    const pctSum = keys.reduce((s, key) => {
-      const target = TARGETS[key]
-      const actual = actuals[key as keyof typeof actuals]
-      return s + (actual / target)
-    }, 0)
-    return Math.round((pctSum / keys.length) * 100)
-  }, [data, actuals])
+    if (targetRows.length === 0) return 0
+    const sum = targetRows.reduce((s, r) => s + r.percentage, 0)
+    return Math.round(sum / targetRows.length)
+  }, [targetRows])
 
-  const getAchievement = (key: string) => {
-    const target = TARGETS[key]
-    const actual = actuals[key as keyof typeof actuals]
-    return Math.round((actual / target) * 100)
-  }
+  const chartData = useMemo(() => {
+    return targetRows.map((r) => ({
+      name: r.channel,
+      Target: r.target > 1_000_000 ? Math.round(r.target / 1_000_000) : r.target,
+      Realisasi: r.target > 1_000_000 ? Math.round(r.actual / 1_000_000) : r.actual,
+    }))
+  }, [targetRows])
 
-  const getStatus = (pct: number) => {
-    if (pct >= 100) return { label: 'On Target', variant: 'success' as const }
-    if (pct >= 75) return { label: 'Need Improvement', variant: 'warning' as const }
-    return { label: 'Below Target', variant: 'danger' as const }
-  }
+  const detailColumns: ColumnDef<TargetRow>[] = [
+    { header: 'Channel', accessorKey: 'channel' },
+    { header: 'Target', accessorKey: 'target', cell: ({ row }) => row.original.target > 1_000_000 ? formatCompact(row.original.target) : formatNumber(row.original.target) },
+    { header: 'Realisasi', accessorKey: 'actual', cell: ({ row }) => row.original.target > 1_000_000 ? formatCompact(row.original.actual) : formatNumber(row.original.actual) },
+    { header: 'Gap', accessorKey: 'gap', cell: ({ row }) => {
+      const g = row.original.gap
+      return g > 0 ? <span className="text-error">({row.original.target > 1_000_000 ? formatCompact(g) : formatNumber(g)})</span> : '-'
+    }},
+    { header: '%', accessorKey: 'percentage', cell: ({ row }) => <span className="font-bold">{row.original.percentage}%</span> },
+    { header: 'Status', accessorKey: 'status', cell: ({ row }) => (
+      <span className={
+        row.original.status === 'on-track' ? 'text-secondary bg-secondary-container/10 px-4 py-1.5 rounded-full text-xs font-bold border border-secondary/20' :
+        row.original.status === 'need-improvement' ? 'text-tertiary bg-tertiary-container/10 px-4 py-1.5 rounded-full text-xs font-bold border border-tertiary/20' :
+        'text-error bg-error-container/10 px-4 py-1.5 rounded-full text-xs font-bold border border-error/20'
+      }>
+        {getTargetStatusLabel(row.original.status)}
+      </span>
+    )},
+  ]
 
   if (!data) return null
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-text">Target vs Realisasi</h2>
+    <div ref={pageRef}>
+      <div className="space-y-8">
+        <div className="flex items-center justify-end">
+          <ExportButtons data={targetRows} filename="Target_vs_Realisasi" pageRef={pageRef} columns={detailColumns} />
+        </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-6">
-          <div className="text-center">
-            <p className="text-sm text-text-secondary">Overall Achievement</p>
-            <p className={`text-5xl font-bold mt-1 ${overallAchievement >= 100 ? 'text-success' : overallAchievement >= 75 ? 'text-warning' : 'text-danger'}`}>
-              {overallAchievement}%
-            </p>
-            <div className="mt-4 h-3 w-full rounded-full bg-muted overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-1000 ease-out ${
-                  overallAchievement >= 100 ? 'bg-success' : overallAchievement >= 75 ? 'bg-warning' : 'bg-danger'
-                }`}
-                style={{ width: `${Math.min(overallAchievement, 100)}%` }}
-              />
-            </div>
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {Object.keys(TARGETS).map((key) => {
-                const pct = getAchievement(key)
-                const status = getStatus(pct)
-                return (
-                  <div key={key} className="text-center">
-                    <p className="text-xs text-text-tertiary uppercase">{key}</p>
-                    <p className="text-lg font-bold mt-0.5">{pct}%</p>
-                    <Badge variant={status.variant} className="mt-1">{status.label}</Badge>
+        {/* Overall Achievement */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-8">
+            <div className="text-center">
+              <p className="text-sm text-on-surface-variant uppercase font-bold tracking-widest">Overall Achievement</p>
+              <p className={`text-5xl font-headline font-bold mt-2 ${overallAchievement >= 100 ? 'text-secondary' : overallAchievement >= 75 ? 'text-tertiary' : 'text-error'}`}>
+                {overallAchievement}%
+              </p>
+              <div className="mt-6 h-4 w-full rounded-full bg-surface-container-high overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-1000 ease-out ${
+                    overallAchievement >= 100 ? 'bg-secondary' : overallAchievement >= 75 ? 'bg-tertiary' : 'bg-error'
+                  }`}
+                  style={{ width: `${Math.min(overallAchievement, 100)}%` }}
+                />
+              </div>
+              <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                {targetRows.map((r) => (
+                  <div key={r.channel} className="text-center">
+                    <p className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest">{r.channel}</p>
+                    <p className="text-xl font-headline font-bold mt-1">{r.percentage}%</p>
+                    <span className={
+                      r.status === 'on-track' ? 'text-secondary bg-secondary-container/10 px-3 py-1 rounded-full text-[10px] font-bold border border-secondary/20 mt-1 inline-block' :
+                      r.status === 'need-improvement' ? 'text-tertiary bg-tertiary-container/10 px-3 py-1 rounded-full text-[10px] font-bold border border-tertiary/20 mt-1 inline-block' :
+                      'text-error bg-error-container/10 px-3 py-1 rounded-full text-[10px] font-bold border border-error/20 mt-1 inline-block'
+                    }>
+                      {getTargetStatusLabel(r.status)}
+                    </span>
                   </div>
-                )
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {Object.keys(TARGETS).map((key) => {
-          const target = TARGETS[key]
-          const actual = key === 'GSF' ? actuals.GSF : actuals[key as keyof typeof actuals]
-          const formattedTarget = key === 'GSF' ? `Rp ${formatCompact(target)}` : formatNumber(target)
-          const formattedActual = key === 'GSF' ? `Rp ${formatCompact(actual)}` : formatNumber(actual)
-          const pct = getAchievement(key)
-          return (
-            <KPICard
-              key={key}
-              title={key}
-              value={formattedActual}
-              subtitle={`Target: ${formattedTarget}`}
-              trend={pct}
-              variant={pct >= 100 ? 'success' : pct >= 75 ? 'warning' : 'danger'}
-            />
-          )
-        })}
+        {/* Chart */}
+        <BarChart title="Target vs Realisasi" data={chartData} index="name" categories={['Target', 'Realisasi']} colors={['#8d90a0', '#b4c5ff']} />
+
+        {/* Detail Table */}
+        <DataTable columns={detailColumns} data={targetRows} searchable={false} compact />
       </div>
-
-      <BarChart title="Target vs Realisasi" data={chartData} index="name" categories={['Target', 'Realisasi']} colors={['gray', 'blue']} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Detail Achievement</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-text-tertiary uppercase">Channel</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-text-tertiary uppercase">Target</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-text-tertiary uppercase">Realisasi</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-text-tertiary uppercase">Gap</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-text-tertiary uppercase">%</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-text-tertiary uppercase">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.keys(TARGETS).map((key) => {
-                  const target = TARGETS[key]
-                  const actual = key === 'GSF' ? actuals.GSF : actuals[key as keyof typeof actuals]
-                  const gap = target - actual
-                  const pct = getAchievement(key)
-                  const status = getStatus(pct)
-                  return (
-                    <tr key={key} className="border-b border-border hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3 text-sm font-medium text-text">{key}</td>
-                      <td className="px-4 py-3 text-sm text-right text-text-secondary">{key === 'GSF' ? formatCompact(target) : formatNumber(target)}</td>
-                      <td className="px-4 py-3 text-sm text-right font-medium text-text">{key === 'GSF' ? formatCompact(actual) : formatNumber(actual)}</td>
-                      <td className={`px-4 py-3 text-sm text-right font-medium ${gap > 0 ? 'text-danger' : 'text-success'}`}>
-                        {gap > 0 ? `(${key === 'GSF' ? formatCompact(gap) : formatNumber(gap)})` : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right font-bold text-text">{pct}%</td>
-                      <td className="px-4 py-3 text-center">
-                        <Badge variant={status.variant} dot>{status.label}</Badge>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

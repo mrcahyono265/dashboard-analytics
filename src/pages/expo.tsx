@@ -1,64 +1,62 @@
-import { useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import { useStore } from '@/lib/store'
 import { useFilteredData } from '@/hooks/use-filtered-data'
+import { useTimeSeries, useGroupedByCategory, usePeriodComparison } from '@/hooks/use-time-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { PieChart } from '@/components/charts/pie-chart'
+import { AreaChart } from '@/components/charts/area-chart'
 import { DataTable } from '@/components/tables/data-table'
 import { ExportButtons } from '@/components/export/export-buttons'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { EXPO } from '@/lib/data'
 import { formatNumber } from '@/lib/utils'
-import { Megaphone, Users, Building2, Package } from 'lucide-react'
+import { getTimeLabel } from '@/lib/constants'
+import { Megaphone, Users, Building2, Package, Calendar } from 'lucide-react'
 
 export function EXPOPage() {
   const { data } = useStore()
+  const timeMode = useStore((s) => s.timeMode)
   const pageRef = useRef<HTMLDivElement>(null)
   const expoData = useFilteredData(data?.expo, 'EXPO')
 
-  const chartByPromotor = useMemo(() => {
-    const map = expoData.reduce<Record<string, number>>((acc, d) => {
-      acc[d.NamaPromotor || 'Unknown'] = (acc[d.NamaPromotor || 'Unknown'] || 0) + 1
-      return acc
-    }, {})
-    return Object.entries(map).map(([name, Activations]) => ({ name, Activations })).sort((a, b) => b.Activations - a.Activations)
-  }, [expoData])
-
-  const chartByPackage = useMemo(() => {
-    const map = expoData.reduce<Record<string, number>>((acc, d) => {
-      acc[d.PackagePlan || 'Unknown'] = (acc[d.PackagePlan || 'Unknown'] || 0) + 1
-      return acc
-    }, {})
-    return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
-  }, [expoData])
+  const periodComparison = usePeriodComparison(expoData, (d) => d.Tanggal || d.Bulan)
+  const timeSeries = useTimeSeries(expoData, (d) => d.Tanggal || d.Bulan)
+  const chartByPromotor = useGroupedByCategory(expoData, (d) => d.NamaPromotor, () => 1)
+  const chartByPackage = useGroupedByCategory(expoData, (d) => d.PackagePlan, () => 1)
+  const chartByLocation = useGroupedByCategory(expoData, (d) => d.ExpoName, () => 1)
 
   const columns: ColumnDef<EXPO>[] = [
-    { header: 'MSISDN', accessorKey: 'MSISDN', enableSorting: true },
-    { header: 'Package', accessorKey: 'PackagePlan', enableSorting: true },
-    { header: 'Price', accessorKey: 'PricePlan', enableSorting: true, cell: ({ row }) => `Rp ${formatNumber(row.original.PricePlan)}` },
-    { header: 'Expo', accessorKey: 'ExpoName', enableSorting: true },
-    { header: 'Promotor', accessorKey: 'NamaPromotor', enableSorting: true },
-    { header: 'RSM', accessorKey: 'RSM', enableSorting: true },
+    { header: 'MSISDN', accessorKey: 'MSISDN' },
+    { header: 'Package', accessorKey: 'PackagePlan' },
+    { header: 'Price', accessorKey: 'PricePlan', cell: ({ row }) => `Rp ${formatNumber(row.original.PricePlan)}` },
+    { header: 'Expo', accessorKey: 'ExpoName' },
+    { header: 'Promotor', accessorKey: 'NamaPromotor' },
+    { header: 'RSM', accessorKey: 'RSM' },
   ]
 
   return (
     <div ref={pageRef}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-text">EXPO Activations</h2>
+      <div className="space-y-8">
+        <div className="flex items-center justify-end">
           <ExportButtons data={expoData} filename="EXPO" pageRef={pageRef} columns={columns} />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KPICard title="Total" value={formatNumber(expoData.length)} icon={<Megaphone className="h-5 w-5" />} />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <KPICard title="Total EXPO" value={formatNumber(expoData.length)} icon={<Megaphone className="h-5 w-5" />} trend={periodComparison.growth} />
           <KPICard title="Promotors" value={formatNumber(new Set(expoData.map((d) => d.NamaPromotor)).size)} variant="success" icon={<Users className="h-5 w-5" />} />
           <KPICard title="Locations" value={formatNumber(new Set(expoData.map((d) => d.ExpoName)).size)} variant="warning" icon={<Building2 className="h-5 w-5" />} />
-          <KPICard title="Packages" value={formatNumber(new Set(expoData.map((d) => d.PackagePlan)).size)} variant="default" icon={<Package className="h-5 w-5" />} />
         </div>
+
+        {timeSeries.length > 1 && (
+          <AreaChart title="Activation Trend" data={timeSeries.map((p) => ({ label: p.label, Activations: p.count }))} index="label" categories={['Activations']} colors={['#c0c1ff']} height={300} />
+        )}
+
         <div className="grid gap-6 lg:grid-cols-2">
-          <BarChart title="By Promotor" data={chartByPromotor} index="name" categories={['Activations']} colors={['violet']} />
-          <BarChart title="By Expo Location" data={Object.entries(expoData.reduce<Record<string, number>>((acc, d) => { acc[d.ExpoName || 'Unknown'] = (acc[d.ExpoName || 'Unknown'] || 0) + 1; return acc }, {})).map(([n, v]) => ({ name: n, Activations: v })).sort((a, b) => b.Activations - a.Activations)} index="name" categories={['Activations']} colors={['cyan']} />
+          <BarChart title="By Promotor" data={chartByPromotor} index="name" categories={['value']} colors={['#c0c1ff']} />
+          <BarChart title="By Expo Location" data={chartByLocation} index="name" categories={['value']} colors={['#89ceff']} />
         </div>
-        <PieChart title="Package Distribution" data={chartByPackage} />
+
         <DataTable columns={columns} data={expoData} searchPlaceholder="Search EXPO..." compact />
       </div>
     </div>
