@@ -29,3 +29,10 @@ dist-ssr
 
 # Source Excel data (too large for git)
 data/
+public/data/*.xlsx
+
+# Reference files
+stitch_prio_sales_dashboard.zip
+
+# Test artifacts
+test-results/
