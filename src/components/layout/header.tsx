@@ -50,26 +50,26 @@ export function Header({
       </div>
 
       {/* Right: Actions + User */}
-      <div className="flex items-center gap-4 sm:gap-6">
-        <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-6">
+        <div className="flex items-center gap-1 sm:gap-4">
           <button
             onClick={onOpenFilter}
-            className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all">
+            className="p-2 sm:p-2 text-on-surface-variant hover:text-primary transition-all rounded-xl">
             <Filter className="h-5 w-5" />
-            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Filter</span>
+            <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider ml-2">Filter</span>
           </button>
           <button
             onClick={toggleTheme}
-            className="p-2 text-on-surface-variant hover:text-primary transition-all">
+            className="p-2 text-on-surface-variant hover:text-primary transition-all rounded-xl">
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
-          <button className="p-2 text-on-surface-variant hover:text-primary transition-all relative">
+          <button className="p-2 text-on-surface-variant hover:text-primary transition-all relative rounded-xl hidden sm:block">
             <Bell className="h-5 w-5" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface-container-lowest" />
           </button>
         </div>
 
-        <div className="flex items-center gap-3 pl-4 sm:pl-6 border-l border-outline-variant">
+        <div className="flex items-center gap-3 pl-2 sm:pl-6 sm:border-l sm:border-outline-variant">
           {user && (
             <>
               <div className="text-right hidden sm:block">

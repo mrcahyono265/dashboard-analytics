@@ -210,8 +210,8 @@ export function Sidebar({ collapsed, onToggle, onUploadClick, mobileOpen, onMobi
         </div>
       </div>
 
-      {/* Collapse Toggle */}
-      <div className={cn("border-t border-outline-variant p-2 shrink-0", collapsed && "flex justify-center")}>
+      {/* Collapse Toggle — hidden on mobile (drawer uses backdrop to close) */}
+      <div className={cn("border-t border-outline-variant p-2 shrink-0 hidden md:block", collapsed && "flex justify-center")}>
         <button
           onClick={onToggle}
           className={cn(
