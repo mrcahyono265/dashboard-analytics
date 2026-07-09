@@ -18,13 +18,14 @@ export interface DateRange {
 interface AppState {
   data: DashboardData | null
   loading: boolean
+  loadingMessage: string | null
   error: string | null
   filters: FilterState
   dataSource: 'excel' | 'google'
   timeMode: TimeMode
   customDateRange: DateRange | null
   setData: (data: DashboardData) => void
-  setLoading: (loading: boolean) => void
+  setLoading: (loading: boolean, message?: string | null) => void
   setError: (error: string | null) => void
   setFilter: (key: keyof FilterState, values: string[]) => void
   resetFilters: () => void
@@ -44,14 +45,15 @@ const defaultFilters: FilterState = {
 export const useStore = create<AppState>((set) => ({
   data: null,
   loading: false,
+  loadingMessage: null,
   error: null,
   filters: defaultFilters,
   dataSource: 'excel',
   timeMode: 'monthly',
   customDateRange: null,
-  setData: (data) => set({ data, loading: false, error: null }),
-  setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error, loading: false }),
+  setData: (data) => set({ data, loading: false, loadingMessage: null, error: null }),
+  setLoading: (loading, message = null) => set({ loading, loadingMessage: loading ? message : null }),
+  setError: (error) => set({ error, loading: false, loadingMessage: null }),
   setFilter: (key, values) =>
     set((state) => ({
       filters: { ...state.filters, [key]: values },

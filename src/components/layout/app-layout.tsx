@@ -5,6 +5,7 @@ import { Header } from './header'
 import { FilterBar, type FilterOption } from '@/components/filters/filter-bar'
 import { TimeFilter } from '@/components/filters/time-filter'
 import { LogViewer } from '@/components/dev/log-viewer'
+import { LoadingOverlay } from '@/components/ui/loading-overlay'
 import { useDataLoader } from '@/hooks/use-data'
 import { useStore } from '@/lib/store'
 import { Toaster } from 'sonner'
@@ -81,7 +82,7 @@ export function AppLayout() {
   const currentSubtitle = pageSubtitles[location.pathname] || ''
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen bg-background">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -98,7 +99,7 @@ export function AppLayout() {
       />
 
       {/* Main Wrapper */}
-      <div className="ml-sidebar-width flex flex-col min-h-screen">
+      <div className="ml-sidebar-width flex flex-col h-screen overflow-y-auto">
         {/* Header */}
         <Header
           title={currentTitle}
@@ -159,6 +160,7 @@ export function AppLayout() {
       </div>
 
       <Toaster position="top-right" richColors closeButton />
+      <LoadingOverlay />
       <LogViewer />
     </div>
   )
