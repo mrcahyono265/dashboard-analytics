@@ -8,6 +8,7 @@ import { LogViewer } from '@/components/dev/log-viewer'
 import { LoadingOverlay } from '@/components/ui/loading-overlay'
 import { useDataLoader } from '@/hooks/use-data'
 import { useStore } from '@/lib/store'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { Toaster } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
 import { getTimeLabel } from '@/lib/constants'
@@ -50,6 +51,12 @@ export function AppLayout() {
   const { data } = useStore()
   const location = useLocation()
   const timeMode = useStore((s) => s.timeMode)
+  const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1024px)')
+
+  // Auto-collapse sidebar on tablet
+  useEffect(() => {
+    if (isTablet) setSidebarCollapsed(true)
+  }, [isTablet])
 
   // Close mobile menu on route change
   useEffect(() => {

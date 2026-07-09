@@ -3,6 +3,14 @@ import type { DashboardData, XLC, GSF, Merchant, WO, EXPO, XLSatu, ELITE, Promot
 
 function formatExcelDate(value: any): string {
   if (value == null) return ''
+  // If already a Date object (from cellDates: true), format directly
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) return String(value)
+    return value.toLocaleDateString('id-ID', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+  }
   const num = Number(value)
   if (isNaN(num) || num < 1) return String(value)
   try {
