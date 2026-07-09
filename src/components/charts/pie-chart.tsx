@@ -2,6 +2,7 @@ import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, ResponsiveContainer, 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCompact } from '@/lib/utils'
 import { CHART_COLORS, CHART_TOOLTIP_STYLE } from '@/lib/chart-config'
+import { useMediaQuery } from '@/hooks/use-media-query'
 
 interface PieChartProps {
   title: string
@@ -14,6 +15,11 @@ interface PieChartProps {
 const defaultFormatter = (v: number) => formatCompact(v)
 
 export function PieChart({ title, data, height = 300, valueFormatter = defaultFormatter, donut = true }: PieChartProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const computedHeight = isMobile ? Math.min(height, 220) : height
+  const innerR = isMobile ? 40 : 60
+  const outerR = isMobile ? 60 : 90
+
   if (!data.length) return null
 
   return (
@@ -22,14 +28,14 @@ export function PieChart({ title, data, height = 300, valueFormatter = defaultFo
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={height}>
+        <ResponsiveContainer width="100%" height={computedHeight}>
           <RechartsPieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={donut ? 60 : 0}
-              outerRadius={90}
+              innerRadius={donut ? innerR : 0}
+              outerRadius={outerR}
               paddingAngle={3}
               dataKey="value"
               nameKey="name"

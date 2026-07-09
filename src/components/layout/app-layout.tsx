@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
@@ -45,10 +45,25 @@ const pageSubtitles: Record<string, string> = {
 export function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { loading, loadFromExcel, loadFromGoogleSheets } = useDataLoader()
   const { data } = useStore()
   const location = useLocation()
   const timeMode = useStore((s) => s.timeMode)
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [location.pathname])
+
+  // Close mobile menu on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false)
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [])
 
   const filterOptions: FilterOption[] = [
     {
@@ -96,6 +111,8 @@ export function AppLayout() {
           }
           input.click()
         }}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
       />
 
       {/* Main Wrapper */}
@@ -110,14 +127,15 @@ export function AppLayout() {
             const url = prompt('Enter Google Sheet ID or URL:')
             if (url) loadFromGoogleSheets(url)
           }}
+          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
         />
 
         {/* Page Content */}
         <main className="mt-header-height flex-1 bg-background">
           <div className="p-container-padding">
             {/* Page Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <div>
                   <h2 className="text-2xl font-headline font-bold text-on-surface">{currentTitle}</h2>
                   {currentSubtitle && (

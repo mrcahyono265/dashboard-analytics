@@ -1,4 +1,4 @@
-import { Search, Filter, Sun, Moon, Bell, Upload, Link, Loader2 } from 'lucide-react'
+import { Search, Filter, Sun, Moon, Bell, Upload, Link, Loader2, Menu } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { useTheme } from '@/providers/theme-provider'
 import { useAuth } from '@/hooks/use-auth'
@@ -11,10 +11,11 @@ interface HeaderProps {
   onUploadExcel: (file: File) => void
   onGoogleSheetConnect: () => void
   onExport?: () => void
+  onMobileMenuToggle?: () => void
 }
 
 export function Header({
-  title, loading, onOpenFilter, onUploadExcel, onGoogleSheetConnect, onExport,
+  title, loading, onOpenFilter, onUploadExcel, onGoogleSheetConnect, onExport, onMobileMenuToggle,
 }: HeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { dataSource } = useStore()
@@ -29,9 +30,16 @@ export function Header({
 
   return (
     <header className="fixed top-0 right-0 h-header-height z-30 flex items-center justify-between px-container-padding ml-sidebar-width w-[calc(100%-theme(spacing.sidebar-width))] bg-surface-container-lowest/80 backdrop-blur-md border-b border-outline-variant shadow-sm">
-      {/* Left: Search */}
+      {/* Left: Hamburger + Search */}
       <div className="flex items-center gap-4 flex-1">
-        <div className="relative w-full max-w-md">
+        {/* Mobile hamburger */}
+        <button
+          onClick={onMobileMenuToggle}
+          className="md:hidden p-2 text-on-surface-variant hover:text-on-surface transition-colors"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="relative w-full max-w-md hidden sm:block">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
             search
           </span>
@@ -44,13 +52,13 @@ export function Header({
       </div>
 
       {/* Right: Actions + User */}
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={onOpenFilter}
             className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-all">
             <Filter className="h-5 w-5" />
-            <span className="text-xs font-bold uppercase tracking-wider">Filter</span>
+            <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Filter</span>
           </button>
           <button
             onClick={toggleTheme}
@@ -63,14 +71,14 @@ export function Header({
           </button>
         </div>
 
-        <div className="flex items-center gap-3 pl-6 border-l border-outline-variant">
+        <div className="flex items-center gap-3 pl-4 sm:pl-6 border-l border-outline-variant">
           {user && (
             <>
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-on-surface">{user.displayName}</p>
                 <p className="text-[10px] text-on-surface-variant uppercase font-medium">Channel Manager</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-primary-container/20 border-2 border-primary-container flex items-center justify-center text-primary font-bold text-sm shadow-lg">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-primary-container/20 border-2 border-primary-container flex items-center justify-center text-primary font-bold text-sm shadow-lg">
                 {user.displayName?.charAt(0) || 'A'}
               </div>
             </>

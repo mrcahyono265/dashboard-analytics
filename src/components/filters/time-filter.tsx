@@ -19,14 +19,14 @@ export function TimeFilter() {
   const isCustom = customDateRange !== null
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center bg-surface-container border border-outline-variant rounded-2xl p-1">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="flex items-center bg-surface-container border border-outline-variant rounded-2xl p-1 shrink-0">
         {timeOptions.map((opt) => (
           <button
             key={opt.value}
             onClick={() => { setTimeMode(opt.value); setCustomDateRange(null) }}
             className={cn(
-              'px-4 py-1.5 text-xs font-label rounded-xl transition-all font-bold',
+              'px-3 sm:px-4 py-1.5 text-xs font-label rounded-xl transition-all font-bold',
               timeMode === opt.value && !isCustom
                 ? 'bg-primary text-on-primary shadow-sm'
                 : 'text-on-surface-variant hover:bg-surface-container-highest'
@@ -37,9 +37,9 @@ export function TimeFilter() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-2 px-3 py-2 bg-surface-container border border-outline-variant rounded-2xl">
-          <Calendar className="text-[18px] text-on-surface-variant" />
+          <Calendar className="text-[18px] text-on-surface-variant hidden sm:block" />
           <input
             type="date"
             value={customDateRange?.from ?? ''}
@@ -48,7 +48,7 @@ export function TimeFilter() {
               const to = customDateRange?.to ?? from
               if (from) setCustomDateRange({ from, to })
             }}
-            className="text-sm text-on-surface bg-transparent border-none outline-none w-[110px] [color-scheme:dark]"
+            className="text-sm text-on-surface bg-transparent border-none outline-none w-[90px] md:w-[110px] [color-scheme:dark]"
             placeholder="From"
           />
           <span className="text-on-surface-variant text-sm">—</span>
@@ -60,7 +60,7 @@ export function TimeFilter() {
               const from = customDateRange?.from ?? to
               if (to) setCustomDateRange({ from, to })
             }}
-            className="text-sm text-on-surface bg-transparent border-none outline-none w-[110px] [color-scheme:dark]"
+            className="text-sm text-on-surface bg-transparent border-none outline-none w-[90px] md:w-[110px] [color-scheme:dark]"
             placeholder="To"
           />
         </div>

@@ -165,6 +165,25 @@
   --color-sidebar-active: rgba(0, 88, 190, 0.08);
 }
 
+/* ─── Responsive Spacing Tokens ─── */
+
+/* Tablet (768px - 1024px): sidebar collapsed to 64px */
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root {
+    --spacing-sidebar-width: 64px;
+    --spacing-container-padding: 16px;
+  }
+}
+
+/* Mobile (< 768px): no sidebar offset, smaller padding/header */
+@media (max-width: 767px) {
+  :root {
+    --spacing-sidebar-width: 0px;
+    --spacing-header-height: 56px;
+    --spacing-container-padding: 12px;
+  }
+}
+
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

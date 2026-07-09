@@ -54,7 +54,7 @@ function FilterDropdown({ option }: { option: FilterOption }) {
         <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-52 rounded-2xl border border-outline-variant bg-surface shadow-xl z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full left-0 mt-1 w-52 max-w-[calc(100vw-2rem)] rounded-2xl border border-outline-variant bg-surface shadow-xl z-50 max-h-60 overflow-y-auto">
           <div className="p-2">
             {option.options.map((val) => (
               <label
@@ -90,9 +90,9 @@ export function FilterBar({ open, options, onClose }: FilterBarProps) {
   return (
     <div className={cn(
       'border-b border-outline-variant bg-surface-container-low transition-all duration-200 overflow-hidden mb-6',
-      open ? 'max-h-32 py-3' : 'max-h-0 py-0'
+      open ? 'max-h-48 py-3' : 'max-h-0 py-0'
     )}>
-      <div className="flex items-center gap-2 px-6 flex-wrap">
+      <div className="flex items-center gap-2 px-4 md:px-6 flex-wrap">
         {options.map((opt) => (
           <FilterDropdown key={opt.key} option={opt} />
         ))}

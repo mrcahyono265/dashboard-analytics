@@ -4,6 +4,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCompact } from '@/lib/utils'
 import { CHART_COLORS, COLOR_ALIAS, CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, AXIS_LINE_STYLE } from '@/lib/chart-config'
+import { useMediaQuery } from '@/hooks/use-media-query'
 
 interface BarChartProps {
   title: string
@@ -25,6 +26,9 @@ export function BarChart({
   layout = 'vertical',
   valueFormatter = defaultFormatter,
 }: BarChartProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const computedHeight = isMobile ? Math.min(height, 220) : height
+
   if (!data.length) return null
   const isHorizontal = layout === 'horizontal'
   const resolvedColors = colors.map((c) => COLOR_ALIAS[c] || c)
@@ -35,7 +39,7 @@ export function BarChart({
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={height}>
+        <ResponsiveContainer width="100%" height={computedHeight}>
           <RechartsBarChart data={data} layout={isHorizontal ? 'vertical' : 'horizontal'} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" vertical={!isHorizontal} horizontal={isHorizontal} />
             {isHorizontal ? (

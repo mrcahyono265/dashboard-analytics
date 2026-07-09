@@ -49,7 +49,7 @@ export function PromotorPage() {
           <ExportButtons data={promotorData} filename="Promotor" pageRef={pageRef} columns={columns} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <KPICard title="Grand Total" value={formatNumber(totalAll)} icon={<Award className="h-5 w-5" />} />
           <KPICard title="Promotors" value={formatNumber(promotorData.length)} variant="success" icon={<Users className="h-5 w-5" />} />
           <KPICard title="Package Types" value={formatNumber(packageKeys.length)} variant="warning" icon={<Package className="h-5 w-5" />} />

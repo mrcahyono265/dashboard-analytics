@@ -41,7 +41,7 @@ export function ELITEPage() {
           <ExportButtons data={eliteData} filename="ELITE" pageRef={pageRef} columns={columns} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <KPICard title="Grand Total" value={formatNumber(total)} icon={<Trophy className="h-5 w-5" />} />
           <KPICard title="New Connection" value={formatNumber(totalNew)} variant="success" icon={<Users className="h-5 w-5" />} />
           <KPICard title="Prepaid→Postpaid" value={formatNumber(totalPrepaid)} variant="warning" icon={<Repeat className="h-5 w-5" />} />

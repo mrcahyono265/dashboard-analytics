@@ -57,6 +57,8 @@ interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
   onUploadClick?: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
 function NavItem({
@@ -106,16 +108,28 @@ function NavItem({
   return content;
 }
 
-export function Sidebar({ collapsed, onToggle, onUploadClick }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, onUploadClick, mobileOpen, onMobileClose }: SidebarProps) {
   const location = useLocation();
   const { logout } = useAuth();
 
   return (
-    <aside
-      className={cn(
-        "flex flex-col h-full z-40 fixed left-0 top-0 border-r border-outline-variant bg-surface transition-all duration-300",
-        collapsed ? "w-16" : "w-sidebar-width",
-      )}>
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      <aside
+        className={cn(
+          "flex flex-col h-full z-40 fixed left-0 top-0 border-r border-outline-variant bg-surface transition-all duration-300",
+          collapsed ? "w-16" : "w-sidebar-width",
+          // Mobile: overlay drawer
+          "max-md:w-[280px] max-md:shadow-2xl",
+          mobileOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full",
+        )}>
       {/* Logo */}
       <div className={cn("flex items-center gap-3 shrink-0", collapsed ? "px-3 py-6 justify-center" : "px-6 py-6")}>
         <div className="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container shadow-lg shadow-primary-container/20 shrink-0">
@@ -209,5 +223,6 @@ export function Sidebar({ collapsed, onToggle, onUploadClick }: SidebarProps) {
         </button>
       </div>
     </aside>
+    </>
   );
 }

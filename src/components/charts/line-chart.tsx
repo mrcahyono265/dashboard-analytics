@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCompact } from '@/lib/utils'
+import { useMediaQuery } from '@/hooks/use-media-query'
 
 interface LineChartProps {
   title: string
@@ -20,13 +21,16 @@ interface LineChartProps {
 }
 
 export function LineChart({ title, data, xKey, lines, height = 350 }: LineChartProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const computedHeight = isMobile ? Math.min(height, 220) : height
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={height}>
+        <ResponsiveContainer width="100%" height={computedHeight}>
           <RechartsLineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant)" />
             <XAxis dataKey={xKey} tick={{ fill: 'var(--color-on-surface-variant)', fontSize: 12 }} tickLine={false} axisLine={{ stroke: 'var(--color-outline-variant)' }} />

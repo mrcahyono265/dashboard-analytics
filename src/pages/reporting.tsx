@@ -151,14 +151,14 @@ export function ReportingPage() {
           <CardContent>
             <div className="space-y-4">
               {channelSummary.map((ch) => (
-                <div key={ch.channel} className="flex items-center gap-3">
+                <div key={ch.channel} className="flex items-center gap-2 sm:gap-3">
                   <span className={ch.color}>{ch.icon}</span>
-                  <span className="text-sm font-bold text-on-surface w-24">{ch.channel}</span>
+                  <span className="text-sm font-bold text-on-surface min-w-[72px] md:min-w-[96px]">{ch.channel}</span>
                   <div className="flex-1 h-2.5 bg-surface-container-high rounded-full overflow-hidden">
                     <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${ch.percentage}%` }} />
                   </div>
-                  <span className="text-sm text-on-surface-variant w-20 text-right font-data-mono">{formatNumber(ch.total)}</span>
-                  <span className="text-xs text-on-surface-variant w-12 text-right font-bold">{ch.percentage}%</span>
+                  <span className="text-sm text-on-surface-variant min-w-[64px] md:min-w-[80px] text-right font-data-mono">{formatNumber(ch.total)}</span>
+                  <span className="text-xs text-on-surface-variant min-w-[40px] md:min-w-[48px] text-right font-bold">{ch.percentage}%</span>
                 </div>
               ))}
             </div>

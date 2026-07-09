@@ -78,7 +78,7 @@ export function XLCPage() {
         </div>
 
         {/* KPI Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <KPICard title="Total XLC Active" value={formatNumber(xlcData.length)} icon={<Smartphone className="h-5 w-5" />} trend={periodComparison.growth} />
           <KPICard title="New Migrations" value={formatNumber(totalNew)} subtitle="vs Migrate" trend={periodComparison.growth} variant="success" icon={<Users className="h-5 w-5" />} />
           <KPICard title="Revenue" value={`Rp ${formatNumber(totalRevenue)}`} subtitle={`Across ${storeCount} stores`} variant="default" icon={<DollarSign className="h-5 w-5" />} />

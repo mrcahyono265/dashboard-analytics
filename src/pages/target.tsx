@@ -111,7 +111,7 @@ export function TargetPage() {
                   style={{ width: `${Math.min(overallAchievement, 100)}%` }}
                 />
               </div>
-              <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {targetRows.map((r) => (
                   <div key={r.channel} className="text-center">
                     <p className="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest">{r.channel}</p>

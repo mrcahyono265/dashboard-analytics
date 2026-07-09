@@ -169,8 +169,8 @@ export function ExportButtons({ data, filename = 'export', columns, pageRef, tab
 
   if (variant === 'row') {
     return (
-      <div className="flex items-center gap-3">
-        <span className="text-[10px] font-label text-on-surface-variant uppercase font-bold tracking-widest mr-2">Export Report</span>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <span className="text-[10px] font-label text-on-surface-variant uppercase font-bold tracking-widest mr-2 hidden sm:inline">Export Report</span>
         <button
           onClick={exportToExcel}
           className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-2xl bg-surface-container hover:bg-surface-container-high transition-colors text-xs font-bold text-on-surface"

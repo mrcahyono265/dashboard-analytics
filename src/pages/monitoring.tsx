@@ -78,7 +78,7 @@ export function MonitoringPage() {
   return (
     <div className="space-y-8">
       {/* Status Cards */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         <Card className="border-l-4 border-l-secondary">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -121,7 +121,7 @@ export function MonitoringPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         <KPICard title={`XLC ${getTimeLabel(timeMode)}`} value={formatNumber(xlcPeriod.current)} trend={xlcPeriod.growth} subtitle={`Target: ${CHANNEL_TARGETS['XLC']}`} icon={<Target className="h-5 w-5" />} />
         <KPICard title={`GSF ${getTimeLabel(timeMode)}`} value={formatCurrency(gsfPeriod.current)} trend={gsfPeriod.growth} subtitle={`Target: ${formatCurrency(CHANNEL_TARGETS['GSF'])}`} variant="success" icon={<Zap className="h-5 w-5" />} />
         <KPICard title={`Merchant ${getTimeLabel(timeMode)}`} value={formatNumber(merchantPeriod.current)} trend={merchantPeriod.growth} subtitle={`Target: ${CHANNEL_TARGETS['Merchant']}`} variant="warning" icon={<Target className="h-5 w-5" />} />

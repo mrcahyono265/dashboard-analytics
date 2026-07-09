@@ -47,8 +47,8 @@ export function KPICard({ title, value, subtitle, trend, icon, variant = 'defaul
   const chartColor = variant === 'default' ? 'var(--color-primary)' : variant === 'success' ? 'var(--color-secondary)' : variant === 'warning' ? 'var(--color-tertiary)' : 'var(--color-error)'
 
   return (
-    <Card className={cn('h-40 flex flex-col justify-between border-l-4', s.border, className)}>
-      <CardContent className="p-5 flex-1 flex flex-col justify-between">
+    <Card className={cn('min-h-[140px] flex flex-col justify-between border-l-4', s.border, className)}>
+      <CardContent className="p-4 md:p-5 flex-1 flex flex-col justify-between">
         {/* Top: Label + Icon */}
         <div className="flex justify-between items-start">
           <p className="text-[10px] font-label text-on-surface-variant uppercase tracking-widest font-bold">{title}</p>
@@ -60,7 +60,7 @@ export function KPICard({ title, value, subtitle, trend, icon, variant = 'defaul
         </div>
 
         {/* Middle: Value */}
-        <h3 className="text-3xl font-data-mono text-on-surface font-medium">{value}</h3>
+        <h3 className="text-2xl md:text-3xl font-data-mono text-on-surface font-medium truncate">{value}</h3>
 
         {/* Bottom: Trend */}
         <div className="flex items-center gap-1">

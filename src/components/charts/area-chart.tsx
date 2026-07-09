@@ -4,6 +4,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCompact } from '@/lib/utils'
 import { CHART_COLORS, CHART_TOOLTIP_STYLE, AXIS_TICK_STYLE, AXIS_LINE_STYLE } from '@/lib/chart-config'
+import { useMediaQuery } from '@/hooks/use-media-query'
 
 interface AreaChartProps {
   title: string
@@ -23,6 +24,9 @@ export function AreaChart({
   height = 300,
   valueFormatter = defaultFormatter,
 }: AreaChartProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)')
+  const computedHeight = isMobile ? Math.min(height, 220) : height
+
   if (!data.length) return null
 
   return (
@@ -31,7 +35,7 @@ export function AreaChart({
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={height}>
+        <ResponsiveContainer width="100%" height={computedHeight}>
           <RechartsAreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <defs>
               {categories.map((cat, i) => (
