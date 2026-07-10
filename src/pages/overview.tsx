@@ -268,13 +268,13 @@ export function OverviewPage() {
       {/* ── Row 3: Channel Donut (4) + Top Stores (4) + Top Packages (4) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <motion.div variants={item} className="lg:col-span-4">
-          <PieChart title="Channel Distribution" data={channelMix} layout="horizontal" height={280} />
+          <PieChart title="Channel Distribution" data={channelMix} height={260} />
         </motion.div>
         <motion.div variants={item} className="lg:col-span-4">
           <BarChart title="Top 10 Stores" data={chartByStore} index="name" categories={['value']} colors={['#b4c5ff']} height={280} />
         </motion.div>
         <motion.div variants={item} className="lg:col-span-4">
-          <PieChart title="Package Distribution" data={chartByPackage.map((d) => ({ name: d.name, value: d.value }))} layout="horizontal" height={280} />
+          <PieChart title="Package Distribution" data={chartByPackage.map((d) => ({ name: d.name, value: d.value }))} height={260} />
         </motion.div>
       </div>
 
@@ -287,7 +287,7 @@ export function OverviewPage() {
           {chartByRSM.length > 1 ? (
             <BarChart title="Performance by RSM" data={chartByRSM} index="name" categories={['Activations']} colors={['#c0c1ff']} />
           ) : (
-            <PieChart title="New vs Migrate" data={[{ name: 'New', value: xlcNew }, { name: 'Migrate', value: xlcMigrate }]} layout="horizontal" />
+            <PieChart title="New vs Migrate" data={[{ name: 'New', value: xlcNew }, { name: 'Migrate', value: xlcMigrate }]} />
           )}
         </motion.div>
       </div>

@@ -123,7 +123,7 @@ export function AppLayout() {
       />
 
       {/* Main Wrapper */}
-      <div className="ml-sidebar-width flex flex-col h-screen overflow-y-auto">
+      <div className="ml-sidebar-width flex flex-col flex-1 min-h-screen">
         {/* Header */}
         <Header
           title={currentTitle}
