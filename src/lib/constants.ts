@@ -14,12 +14,12 @@ export function getTimeLabel(timeMode: TimeMode): string {
 
 // ─── Channel Targets ─────────────────────────────────────────
 export const CHANNEL_TARGETS: Record<string, number> = {
-  XLC: 500,
-  GSF: 300_000_000,
-  Merchant: 50,
-  WO: 100,
+  XLC: 10_000,
+  GSF: 50_000_000,
+  Merchant: 150,
+  WO: 200,
   EXPO: 200,
-  'XL Satu': 20,
+  'XL Satu': 10_000,
 }
 
 export type TargetStatus = 'on-track' | 'need-improvement' | 'below-target'

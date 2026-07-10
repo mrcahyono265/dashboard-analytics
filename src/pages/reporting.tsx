@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react'
+import { useStore } from '@/lib/store'
 import { useAllChannelData } from '@/hooks/use-channel-data'
 import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
@@ -13,6 +14,7 @@ import {
   FileText, Smartphone, CreditCard, Store, UserRound, Megaphone, Wifi,
   TrendingUp, BarChart3
 } from 'lucide-react'
+import { EmptyState } from '@/components/dashboard/empty-state'
 
 interface ChannelSummary {
   channel: string
@@ -35,7 +37,10 @@ interface MonthlyRecap {
 
 export function ReportingPage() {
   const pageRef = useRef<HTMLDivElement>(null)
+  const { data } = useStore()
   const { xlc, gsf, merchant, wo, expo, xlsatu } = useAllChannelData()
+
+  if (!data) return <EmptyState />
 
   const xlcTotal = xlc.length
   const gsfTotal = gsf.reduce((s, d) => s + d.Amount, 0)

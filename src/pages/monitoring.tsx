@@ -12,6 +12,7 @@ import { getTimeLabel, CHANNEL_TARGETS, getTargetStatus, getTargetStatusLabel, c
 import {
   Activity, Clock, TrendingUp, AlertTriangle, CheckCircle2, XCircle, Target, Zap
 } from 'lucide-react'
+import { EmptyState } from '@/components/dashboard/empty-state'
 
 export function MonitoringPage() {
   const { data, timeMode } = useStore()
@@ -73,7 +74,7 @@ export function MonitoringPage() {
     Actual: t.target > 1_000_000 ? Math.round(t.actual / 1_000_000) : t.actual,
   }))
 
-  if (!data) return null
+  if (!data) return <EmptyState />
 
   return (
     <div className="space-y-8">

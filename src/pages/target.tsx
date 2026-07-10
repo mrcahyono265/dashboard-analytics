@@ -13,6 +13,7 @@ import {
 } from '@/lib/constants'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Target } from 'lucide-react'
+import { EmptyState } from '@/components/dashboard/empty-state'
 
 interface TargetRow {
   channel: string
@@ -86,7 +87,7 @@ export function TargetPage() {
     )},
   ]
 
-  if (!data) return null
+  if (!data) return <EmptyState />
 
   return (
     <div ref={pageRef}>

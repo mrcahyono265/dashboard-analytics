@@ -2,7 +2,7 @@ import { KPICard } from '@/components/charts/kpi-card'
 import { BarChart } from '@/components/charts/bar-chart'
 import { PieChart } from '@/components/charts/pie-chart'
 import { AreaChart } from '@/components/charts/area-chart'
-import { Smartphone, CreditCard, Store, BarChart3 } from 'lucide-react'
+import { Smartphone, CreditCard, Store, BarChart3, Wifi } from 'lucide-react'
 import { formatCompact, formatCurrency } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { useOverviewData } from '@/hooks/use-overview-data'
@@ -20,12 +20,15 @@ export function OverviewPage() {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       {/* ── KPI Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <motion.div variants={item}>
           <KPICard title="Total Activation" value={formatCompact(d.grandTotal)} subtitle="All channels" trend={d.allActivationPeriod.growth} variant="success" icon={<BarChart3 className="h-5 w-5" />} sparklineData={d.totalSparkline} />
         </motion.div>
         <motion.div variants={item}>
           <KPICard title="XLC Activations" value={formatCompact(d.xlcTotal)} subtitle={`${d.xlcNew} New · ${d.xlcMigrate} Migrate`} trend={d.xlcPeriod.growth} variant="default" icon={<Smartphone className="h-5 w-5" />} sparklineData={d.xlcSparkline} />
+        </motion.div>
+        <motion.div variants={item}>
+          <KPICard title="XL Satu" value={formatCompact(d.xlsatuTotal)} subtitle="Home Broadband" variant="default" icon={<Wifi className="h-5 w-5" />} />
         </motion.div>
         <motion.div variants={item}>
           <KPICard title="GSF Revenue" value={formatCurrency(d.gsfTotal)} subtitle={`${formatCompact(d.gsfCount)} transactions`} trend={d.gsfPeriod.growth} variant="success" icon={<CreditCard className="h-5 w-5" />} sparklineData={d.gsfSparkline} />
@@ -39,7 +42,7 @@ export function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {d.trendData.length > 1 && (
           <motion.div variants={item} className="lg:col-span-8">
-            <AreaChart title="Activation Trend" data={d.trendData} index="label" categories={['XLC', 'Merchant', 'WO', 'EXPO']} colors={['#b4c5ff', '#fbbf24', '#f87171', '#c0c1ff']} height={340} />
+            <AreaChart title="Activation Trend" data={d.trendData} index="label" categories={['XLC', 'Merchant', 'WO', 'EXPO', 'XL Satu']} colors={['#b4c5ff', '#fbbf24', '#f87171', '#c0c1ff', '#22d3ee']} height={340} />
           </motion.div>
         )}
         <motion.div variants={item} className="lg:col-span-4">

@@ -14,6 +14,7 @@ export function useOverviewData() {
   const filteredMerchant = useFilteredData(data?.merchant, 'Merchant')
   const filteredWo = useFilteredData(data?.wo, 'WO')
   const filteredExpo = useFilteredData(data?.expo, 'EXPO')
+  const filteredXlsatu = useFilteredData(data?.xlsatu, 'XL Satu')
 
   // ── Counts ──
   const xlcTotal = filteredXlc.length
@@ -24,14 +25,15 @@ export function useOverviewData() {
   const merchantTotal = filteredMerchant.length
   const woTotal = filteredWo.length
   const expoTotal = filteredExpo.length
-  const grandTotal = xlcTotal + merchantTotal + woTotal + expoTotal
+  const xlsatuTotal = filteredXlsatu.length
+  const grandTotal = xlcTotal + merchantTotal + woTotal + expoTotal + xlsatuTotal
 
   // ── Period comparison ──
   const xlcPeriod = usePeriodComparison(filteredXlc, (d) => d.Tanggal || d.Bulan)
   const gsfPeriod = usePeriodComparison(filteredGsf, (d) => d.Tanggal || d.Bulan)
   const merchantPeriod = usePeriodComparison(filteredMerchant, (d) => d.Tanggal || d.Bulan)
   const allActivationPeriod = usePeriodComparison(
-    [...filteredXlc, ...filteredMerchant, ...filteredWo, ...filteredExpo],
+    [...filteredXlc, ...filteredMerchant, ...filteredWo, ...filteredExpo, ...filteredXlsatu],
     (d: any) => d.Tanggal || d.Bulan
   )
 
@@ -40,10 +42,11 @@ export function useOverviewData() {
   const merchantTimeSeries = useTimeSeries(filteredMerchant, (d) => d.Tanggal || d.Bulan)
   const woTimeSeries = useTimeSeries(filteredWo, (d) => d.Tanggal || d.Bulan)
   const expoTimeSeries = useTimeSeries(filteredExpo, (d) => d.Tanggal || d.Bulan)
+  const xlsatuTimeSeries = useTimeSeries(filteredXlsatu, (d) => d.Tanggal || d.Bulan)
 
   const trendData = useMemo(() => {
     const allLabels = new Set<string>()
-    ;[xlcTimeSeries, merchantTimeSeries, woTimeSeries, expoTimeSeries].forEach((ts) =>
+    ;[xlcTimeSeries, merchantTimeSeries, woTimeSeries, expoTimeSeries, xlsatuTimeSeries].forEach((ts) =>
       ts.forEach((p) => allLabels.add(p.label))
     )
     const maps = [
@@ -51,22 +54,23 @@ export function useOverviewData() {
       new Map(merchantTimeSeries.map((p) => [p.label, p.count])),
       new Map(woTimeSeries.map((p) => [p.label, p.count])),
       new Map(expoTimeSeries.map((p) => [p.label, p.count])),
+      new Map(xlsatuTimeSeries.map((p) => [p.label, p.count])),
     ]
-    const keys = ['XLC', 'Merchant', 'WO', 'EXPO']
+    const keys = ['XLC', 'Merchant', 'WO', 'EXPO', 'XL Satu']
     return Array.from(allLabels).sort().map((label) => ({
       label,
       ...Object.fromEntries(keys.map((k, i) => [k, maps[i].get(label) ?? 0])),
     }))
-  }, [xlcTimeSeries, merchantTimeSeries, woTimeSeries, expoTimeSeries])
+  }, [xlcTimeSeries, merchantTimeSeries, woTimeSeries, expoTimeSeries, xlsatuTimeSeries])
 
   // ── Sparklines ──
   const xlcSparkline = useMemo(() => computeMonthlySparkline(filteredXlc, () => 1), [filteredXlc])
   const gsfSparkline = useMemo(() => computeMonthlySparkline(filteredGsf, (d) => d.Amount), [filteredGsf])
   const merchantSparkline = useMemo(() => computeMonthlySparkline(filteredMerchant, () => 1), [filteredMerchant])
   const totalSparkline = useMemo(() => {
-    const all = [...filteredXlc, ...filteredMerchant, ...filteredWo, ...filteredExpo].map((d) => ({ Bulan: d.Bulan }))
+    const all = [...filteredXlc, ...filteredMerchant, ...filteredWo, ...filteredExpo, ...filteredXlsatu].map((d) => ({ Bulan: d.Bulan }))
     return computeMonthlySparkline(all, () => 1)
-  }, [filteredXlc, filteredMerchant, filteredWo, filteredExpo])
+  }, [filteredXlc, filteredMerchant, filteredWo, filteredExpo, filteredXlsatu])
 
   // ── Category charts ──
   const chartByStore = useGroupedByCategory(filteredXlc, (d) => d.StoreName, () => 1, 10)
@@ -74,7 +78,7 @@ export function useOverviewData() {
   const gsfChart = useGroupedByCategory(filteredGsf, (d) => d.EventName, () => 1, 8)
 
   const chartByRSM = useMemo(() => {
-    const all = [...filteredXlc, ...filteredMerchant, ...filteredWo, ...filteredExpo]
+    const all = [...filteredXlc, ...filteredMerchant, ...filteredWo, ...filteredExpo, ...filteredXlsatu]
     const map = all.reduce<Record<string, number>>((acc, d: any) => {
       if (d.RSM) acc[d.RSM] = (acc[d.RSM] || 0) + 1
       return acc
@@ -82,34 +86,33 @@ export function useOverviewData() {
     return Object.entries(map)
       .map(([name, Activations]) => ({ name, Activations }))
       .sort((a, b) => b.Activations - a.Activations)
-  }, [filteredXlc, filteredMerchant, filteredWo, filteredExpo])
+  }, [filteredXlc, filteredMerchant, filteredWo, filteredExpo, filteredXlsatu])
 
   const channelMix = [
     { name: 'XLC', value: xlcTotal },
-    { name: 'Merchant', value: merchantTotal },
-    { name: 'WO', value: woTotal },
+    { name: 'XL Satu', value: xlsatuTotal },
     { name: 'EXPO', value: expoTotal },
+    { name: 'WO', value: woTotal },
+    { name: 'Merchant', value: merchantTotal },
   ]
 
   // ── Target progress ──
   const targetData = useMemo(() => {
     const actuals: Record<string, number> = {
-      XLC: xlcTotal, GSF: gsfTotal, Merchant: merchantTotal, WO: woTotal, EXPO: expoTotal,
+      XLC: xlcTotal, GSF: gsfTotal, Merchant: merchantTotal, WO: woTotal, EXPO: expoTotal, 'XL Satu': xlsatuTotal,
     }
-    return Object.entries(CHANNEL_TARGETS)
-      .filter(([ch]) => ch !== 'XL Satu')
-      .map(([channel, target]) => {
-        const actual = actuals[channel] ?? 0
-        const pct = computeTargetPercentage(actual, target)
-        return { channel, target, actual, pct, status: getTargetStatus(pct) }
-      })
-  }, [xlcTotal, gsfTotal, merchantTotal, woTotal, expoTotal])
+    return Object.entries(CHANNEL_TARGETS).map(([channel, target]) => {
+      const actual = actuals[channel] ?? 0
+      const pct = computeTargetPercentage(actual, target)
+      return { channel, target, actual, pct, status: getTargetStatus(pct) }
+    })
+  }, [xlcTotal, gsfTotal, merchantTotal, woTotal, expoTotal, xlsatuTotal])
 
   return {
     data, timeMode,
     // Counts
     xlcTotal, xlcNew, xlcMigrate, gsfTotal, gsfCount,
-    merchantTotal, woTotal, expoTotal, grandTotal,
+    merchantTotal, woTotal, expoTotal, xlsatuTotal, grandTotal,
     // Period
     xlcPeriod, gsfPeriod, merchantPeriod, allActivationPeriod,
     // Charts
