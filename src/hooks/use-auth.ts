@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { login as authLogin, logout as authLogout, getCurrentUser, initDefaultUser, type User } from '@/lib/auth'
+import { login as authLogin, logout as authLogout, getCurrentUser, type User } from '@/lib/auth'
 import { logger } from '@/lib/logger'
 
 export function useAuth() {
@@ -7,28 +7,40 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    initDefaultUser()
-    const currentUser = getCurrentUser()
-    setUser(currentUser)
-    if (currentUser) {
-      logger.info('auth', 'Session restored', { user: currentUser.username, role: currentUser.role })
+    const restoreSession = async () => {
+      try {
+        const currentUser = await getCurrentUser()
+        setUser(currentUser)
+        if (currentUser) {
+          logger.info('auth', 'Session restored', { user: currentUser.username, role: currentUser.role })
+        }
+      } catch (error) {
+        logger.warn('auth', 'Failed to restore session')
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
+    restoreSession()
   }, [])
 
-  const login = useCallback((username: string, password: string): boolean => {
+  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const start = performance.now()
-    const result = authLogin(username, password)
-    const duration = Math.round(performance.now() - start)
+    try {
+      const result = await authLogin(username, password)
+      const duration = Math.round(performance.now() - start)
 
-    if (result) {
-      setUser(result)
-      logger.info('auth', 'Login successful', { user: username, role: result.role, duration })
-      return true
+      if (result) {
+        setUser(result)
+        logger.info('auth', 'Login successful', { user: username, role: result.role, duration })
+        return true
+      }
+
+      logger.warn('auth', 'Login failed', { user: username, duration })
+      return false
+    } catch (error) {
+      logger.warn('auth', 'Login error', { user: username, error: String(error) })
+      return false
     }
-
-    logger.warn('auth', 'Login failed', { user: username, duration })
-    return false
   }, [])
 
   const logout = useCallback(() => {
