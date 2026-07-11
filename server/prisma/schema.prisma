@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  passwordHash  String
+  displayName   String
+  role          String    @default("SALES") // ADMIN, MANAGER, SALES
+  rsm           String?   // Regional Sales Manager
+  sm            String?   // Sales Manager
+  storeName     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  uploadedData  DataRecord[]
+}
+
+model DataRecord {
+  id          String   @id @default(cuid())
+  sheetType   String   // XLC, GSF, Merchant, WO, EXPO, XLSatu, ELITE, Promotor
+  period      String   // e.g., "2026-07"
+  dataJson    String   // Parsed Excel data (JSON string)
+  uploadedBy  String
+  source      String   @default("upload") // "upload" | "excel365"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [uploadedBy], references: [id])
+
+  @@unique([sheetType, period, uploadedBy])
+}
+
+model SyncLog {
+  id           String   @id @default(cuid())
+  source       String   // "excel365"
+  fileId       String?  // Microsoft Graph file ID
+  status       String   // "success" | "error" | "pending"
+  recordsCount Int?
+  error        String?
+  createdAt    DateTime @default(now())
+}
+
+model Target {
+  id          String   @id @default(cuid())
+  channel     String   // XLC, GSF, Merchant, WO, EXPO, XLSatu
+  targetValue Float
+  period      String   // e.g., "2026-07"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([channel, period])
+}
