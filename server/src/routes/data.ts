@@ -27,6 +27,31 @@ const upload = multer({
   }
 });
 
+// Helper: Build where clause based on role
+async function buildDataFilter(user: any, sheetType?: string) {
+  const where: any = {};
+
+  if (sheetType) {
+    where.sheetType = sheetType;
+  }
+
+  // Role-based filtering
+  if (user.role === 'CRR') {
+    // CRR: only see their own data
+    where.uploadedBy = user.id;
+  } else if (user.role === 'STORE_MANAGER') {
+    // Store Manager: see all CRRs in their center
+    const crrUsers = await prisma.user.findMany({
+      where: { center: user.center, role: 'CRR' },
+      select: { id: true }
+    });
+    where.uploadedBy = { in: crrUsers.map(u => u.id) };
+  }
+  // RSE: no filter, see all
+
+  return where;
+}
+
 // GET /api/data/:sheetType - Get data for a specific sheet type
 router.get('/:sheetType', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -39,23 +64,17 @@ router.get('/:sheetType', authMiddleware, async (req: AuthRequest, res: Response
       return;
     }
 
-    const where: any = { sheetType };
+    const where = await buildDataFilter(req.user!, sheetType);
     if (period) {
       where.period = period;
-    }
-
-    // Role-based filtering
-    if (req.user!.role === 'SALES') {
-      where.uploadedBy = req.user!.id;
     }
 
     const records = await prisma.dataRecord.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      take: 10 // Latest 10 records
+      take: 10
     });
 
-    // Return the latest record's data
     if (records.length === 0) {
       res.json({ data: [], period: null });
       return;
@@ -63,7 +82,7 @@ router.get('/:sheetType', authMiddleware, async (req: AuthRequest, res: Response
 
     const latest = records[0];
     res.json({
-      data: latest.dataJson,
+      data: JSON.parse(latest.dataJson),
       period: latest.period,
       source: latest.source,
       uploadedAt: latest.createdAt
@@ -79,17 +98,11 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { period } = req.query;
 
-    const where: any = {};
+    const where = await buildDataFilter(req.user!);
     if (period) {
       where.period = period;
     }
 
-    // Role-based filtering
-    if (req.user!.role === 'SALES') {
-      where.uploadedBy = req.user!.id;
-    }
-
-    // Get latest record for each sheet type
     const sheetTypes = ['XLC', 'GSF', 'Merchant', 'WO', 'EXPO', 'XLSatu', 'ELITE', 'Promotor'];
     const result: Record<string, any> = {};
 
@@ -101,7 +114,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
       if (latest) {
         result[sheetType] = {
-          data: latest.dataJson,
+          data: JSON.parse(latest.dataJson),
           period: latest.period,
           source: latest.source,
           uploadedAt: latest.createdAt
@@ -124,15 +137,11 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req: AuthRe
       return;
     }
 
-    const period = req.body.period || new Date().toISOString().slice(0, 7); // Default: YYYY-MM
+    const period = req.body.period || new Date().toISOString().slice(0, 7);
 
-    // Parse Excel file
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-
-    // Parse all sheets
     const parsedData = parseExcelData(workbook);
 
-    // Store each sheet type in database
     const results: { sheetType: string; recordsCount: number }[] = [];
 
     for (const [sheetType, data] of Object.entries(parsedData)) {
@@ -146,13 +155,13 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req: AuthRe
             }
           },
           update: {
-            dataJson: data,
+            dataJson: JSON.stringify(data),
             source: 'upload'
           },
           create: {
             sheetType,
             period,
-            dataJson: data,
+            dataJson: JSON.stringify(data),
             uploadedBy: req.user!.id,
             source: 'upload'
           }
@@ -173,50 +182,112 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req: AuthRe
   }
 });
 
-// GET /api/data/overview/stats - Get aggregated statistics
-router.get('/overview/stats', authMiddleware, async (req: AuthRequest, res: Response) => {
+// POST /api/data/manual - Manual input per row
+router.post('/manual', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { period } = req.query;
-
-    const where: any = {};
-    if (period) {
-      where.period = period;
-    }
-
-    // Role-based filtering
-    if (req.user!.role === 'SALES') {
-      where.uploadedBy = req.user!.id;
-    }
-
-    const records = await prisma.dataRecord.findMany({
-      where,
-      select: {
-        sheetType: true,
-        period: true,
-        createdAt: true
-      },
-      orderBy: { createdAt: 'desc' }
+    const schema = z.object({
+      sheetType: z.enum(['XLC', 'GSF', 'Merchant', 'WO', 'EXPO', 'XLSatu', 'ELITE', 'Promotor']),
+      period: z.string().regex(/^\d{4}-\d{2}$/),
+      data: z.array(z.record(z.any()))
     });
 
-    // Group by period and sheet type
-    const stats: Record<string, Record<string, { count: number; lastUpload: Date }>> = {};
+    const { sheetType, period, data } = schema.parse(req.body);
 
-    for (const record of records) {
-      if (!stats[record.period]) {
-        stats[record.period] = {};
+    await prisma.dataRecord.upsert({
+      where: {
+        sheetType_period_uploadedBy: {
+          sheetType,
+          period,
+          uploadedBy: req.user!.id
+        }
+      },
+      update: {
+        dataJson: JSON.stringify(data),
+        source: 'manual'
+      },
+      create: {
+        sheetType,
+        period,
+        dataJson: JSON.stringify(data),
+        uploadedBy: req.user!.id,
+        source: 'manual'
       }
-      if (!stats[record.period][record.sheetType]) {
-        stats[record.period][record.sheetType] = {
-          count: 0,
-          lastUpload: record.createdAt
-        };
+    });
+
+    res.json({
+      message: 'Data saved successfully',
+      recordsCount: data.length
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Validation error', details: error.errors });
+      return;
+    }
+    console.error('Manual input error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/data/append - Append row to existing data
+router.post('/append', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      sheetType: z.enum(['XLC', 'GSF', 'Merchant', 'WO', 'EXPO', 'XLSatu', 'ELITE', 'Promotor']),
+      period: z.string().regex(/^\d{4}-\d{2}$/),
+      row: z.record(z.any())
+    });
+
+    const { sheetType, period, row } = schema.parse(req.body);
+
+    // Get existing data
+    const existing = await prisma.dataRecord.findUnique({
+      where: {
+        sheetType_period_uploadedBy: {
+          sheetType,
+          period,
+          uploadedBy: req.user!.id
+        }
       }
-      stats[record.period][record.sheetType].count++;
+    });
+
+    let data: any[];
+    if (existing) {
+      data = [...JSON.parse(existing.dataJson), row];
+    } else {
+      data = [row];
     }
 
-    res.json({ stats });
+    await prisma.dataRecord.upsert({
+      where: {
+        sheetType_period_uploadedBy: {
+          sheetType,
+          period,
+          uploadedBy: req.user!.id
+        }
+      },
+      update: {
+        dataJson: JSON.stringify(data),
+        source: 'manual'
+      },
+      create: {
+        sheetType,
+        period,
+        dataJson: JSON.stringify(data),
+        uploadedBy: req.user!.id,
+        source: 'manual'
+      }
+    });
+
+    res.json({
+      message: 'Row appended successfully',
+      totalRecords: data.length
+    });
   } catch (error) {
-    console.error('Get stats error:', error);
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Validation error', details: error.errors });
+      return;
+    }
+    console.error('Append error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
