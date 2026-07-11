@@ -47,7 +47,7 @@ test-results/
 client.md
 
 # dev db prism
-server/prism/dev.db
+server/prisma/dev.db
 
 # env vars
 server/.env
