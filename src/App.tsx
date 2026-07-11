@@ -19,6 +19,8 @@ const PromotorPage = lazy(() => import('@/pages/promotor').then((m) => ({ defaul
 const TargetPage = lazy(() => import('@/pages/target').then((m) => ({ default: m.TargetPage })))
 const ReportingPage = lazy(() => import('@/pages/reporting').then((m) => ({ default: m.ReportingPage })))
 const MonitoringPage = lazy(() => import('@/pages/monitoring').then((m) => ({ default: m.MonitoringPage })))
+const UploadPage = lazy(() => import('@/pages/upload').then((m) => ({ default: m.UploadPage })))
+const Excel365SettingsPage = lazy(() => import('@/pages/excel365-settings').then((m) => ({ default: m.Excel365Settings })))
 
 function PageLoader() {
   return (
@@ -73,6 +75,8 @@ function App() {
                 <Route path="/target" element={<TargetPage />} />
                 <Route path="/reporting" element={<ReportingPage />} />
                 <Route path="/monitoring" element={<MonitoringPage />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/excel365" element={<Excel365SettingsPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
