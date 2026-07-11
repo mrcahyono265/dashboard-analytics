@@ -7,10 +7,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-me';
 export interface AuthUser {
   id: string;
   username: string;
-  role: string; // 'ADMIN' | 'MANAGER' | 'SALES'
-  rsm?: string | null;
-  sm?: string | null;
-  storeName?: string | null;
+  role: string; // 'RSE' | 'STORE_MANAGER' | 'CRR'
+  region?: string | null;
+  center?: string | null;
+  crrName?: string | null;
 }
 
 export interface AuthRequest extends Request {
@@ -45,7 +45,7 @@ export async function authMiddleware(
     // Verify user still exists
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, username: true, role: true, rsm: true, sm: true, storeName: true }
+      select: { id: true, username: true, role: true, region: true, center: true, crrName: true }
     });
 
     if (!user) {
