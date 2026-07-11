@@ -5,6 +5,7 @@ import { authRoutes } from './routes/auth.js';
 import { dataRoutes } from './routes/data.js';
 import { userRoutes } from './routes/users.js';
 import { syncRoutes } from './routes/sync.js';
+import { targetRoutes } from './routes/targets.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/targets', targetRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
