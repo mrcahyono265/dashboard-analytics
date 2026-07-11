@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Smartphone, CreditCard, Store, UserRound,
   Megaphone, Wifi, Trophy, Users, Target, FileText, Activity,
+  Upload, Cloud,
 } from 'lucide-react'
 
 export interface NavItemData {
@@ -20,6 +21,8 @@ export const navGroups: NavGroup[] = [
     items: [
       { to: '/', label: 'Overview', icon: LayoutDashboard },
       { to: '/monitoring', label: 'Monitoring', icon: Activity },
+      { to: '/upload', label: 'Upload Data', icon: Upload },
+      { to: '/excel365', label: 'Excel 365 Sync', icon: Cloud },
     ],
   },
   {
