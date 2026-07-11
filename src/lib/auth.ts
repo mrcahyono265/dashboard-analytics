@@ -4,10 +4,10 @@ export interface User {
   id?: string
   username: string
   displayName: string
-  role: 'admin' | 'viewer' | 'ADMIN' | 'MANAGER' | 'SALES'
-  rsm?: string | null
-  sm?: string | null
-  storeName?: string | null
+  role: 'RSE' | 'STORE_MANAGER' | 'CRR'
+  region?: string | null
+  center?: string | null
+  crrName?: string | null
 }
 
 const SESSION_KEY = 'prio_dashboard_session'
@@ -42,10 +42,11 @@ function initDefaultUser(): void {
     const users = raw ? JSON.parse(raw) : []
     if (users.length === 0) {
       users.push({
-        username: 'admin',
+        username: 'zahra',
         passwordHash: simpleHash('admin123'),
-        displayName: 'Administrator',
-        role: 'admin',
+        displayName: 'Mbak Zahra (RSE)',
+        role: 'RSE',
+        region: 'East'
       })
       localStorage.setItem(USERS_KEY, JSON.stringify(users))
     }
@@ -64,9 +65,9 @@ export async function login(username: string, password: string): Promise<User | 
         username: result.user.username,
         displayName: result.user.displayName,
         role: result.user.role,
-        rsm: result.user.rsm,
-        sm: result.user.sm,
-        storeName: result.user.storeName,
+        region: result.user.region,
+        center: result.user.center,
+        crrName: result.user.crrName
       }
       localStorage.setItem(SESSION_KEY, JSON.stringify(user))
       localStorage.setItem(AUTH_MODE_KEY, 'api')
@@ -90,6 +91,9 @@ export async function login(username: string, password: string): Promise<User | 
       username: found.username,
       displayName: found.displayName,
       role: found.role,
+      region: found.region,
+      center: found.center,
+      crrName: found.crrName
     }
     localStorage.setItem(SESSION_KEY, JSON.stringify(user))
     localStorage.setItem(AUTH_MODE_KEY, 'local')
@@ -121,9 +125,9 @@ export async function getCurrentUser(): Promise<User | null> {
         username: result.user.username,
         displayName: result.user.displayName,
         role: result.user.role,
-        rsm: result.user.rsm,
-        sm: result.user.sm,
-        storeName: result.user.storeName,
+        region: result.user.region,
+        center: result.user.center,
+        crrName: result.user.crrName
       }
       localStorage.setItem(SESSION_KEY, JSON.stringify(user))
       return user
@@ -146,22 +150,24 @@ export function isAuthenticated(): boolean {
   return localStorage.getItem(SESSION_KEY) !== null
 }
 
-// Helper to normalize role to lowercase
-export function getNormalizedRole(user: User | null): string {
-  if (!user) return 'viewer'
-  const role = user.role.toLowerCase()
-  if (role === 'admin') return 'admin'
-  if (role === 'manager') return 'manager'
-  if (role === 'sales') return 'sales'
-  return 'viewer'
+// Helper to check role
+export function isRSE(user: User | null): boolean {
+  return user?.role === 'RSE'
 }
 
-// Check if user has access
-export function hasAccess(user: User | null, requiredRole: 'admin' | 'manager' | 'sales'): boolean {
+export function isStoreManager(user: User | null): boolean {
+  return user?.role === 'STORE_MANAGER'
+}
+
+export function isCRR(user: User | null): boolean {
+  return user?.role === 'CRR'
+}
+
+// Check if user has access (hierarchy)
+export function hasAccess(user: User | null, requiredRole: 'RSE' | 'STORE_MANAGER' | 'CRR'): boolean {
   if (!user) return false
-  const role = getNormalizedRole(user)
-  if (role === 'admin') return true
-  if (role === 'manager' && (requiredRole === 'manager' || requiredRole === 'sales')) return true
-  if (role === 'sales' && requiredRole === 'sales') return true
+  if (user.role === 'RSE') return true
+  if (user.role === 'STORE_MANAGER' && (requiredRole === 'STORE_MANAGER' || requiredRole === 'CRR')) return true
+  if (user.role === 'CRR' && requiredRole === 'CRR') return true
   return false
 }
