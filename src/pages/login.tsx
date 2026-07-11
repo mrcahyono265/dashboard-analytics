@@ -22,9 +22,8 @@ export function LoginPage() {
     }
 
     setIsLoading(true)
-    await new Promise((r) => setTimeout(r, 300))
 
-    const success = login(username, password)
+    const success = await login(username, password)
     setIsLoading(false)
 
     if (success) {
