@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '../lib/db.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { requireAdmin } from '../middleware/rbac.js';
+import { requireRSE } from '../middleware/rbac.js';
 
 const router = Router();
 
@@ -11,23 +11,23 @@ const createUserSchema = z.object({
   username: z.string().min(3).max(50),
   password: z.string().min(6),
   displayName: z.string().min(1),
-  role: z.enum(['ADMIN', 'MANAGER', 'SALES']).default('SALES'),
-  rsm: z.string().optional(),
-  sm: z.string().optional(),
-  storeName: z.string().optional()
+  role: z.enum(['RSE', 'STORE_MANAGER', 'CRR']).default('CRR'),
+  region: z.string().optional(),
+  center: z.string().optional(),
+  crrName: z.string().optional()
 });
 
 const updateUserSchema = z.object({
   displayName: z.string().min(1).optional(),
-  role: z.enum(['ADMIN', 'MANAGER', 'SALES']).optional(),
-  rsm: z.string().optional(),
-  sm: z.string().optional(),
-  storeName: z.string().optional(),
+  role: z.enum(['RSE', 'STORE_MANAGER', 'CRR']).optional(),
+  region: z.string().optional(),
+  center: z.string().optional(),
+  crrName: z.string().optional(),
   password: z.string().min(6).optional()
 });
 
-// GET /api/users - List all users (admin only)
-router.get('/', authMiddleware, requireAdmin, async (_req: AuthRequest, res: Response) => {
+// GET /api/users - List all users (RSE only)
+router.get('/', authMiddleware, requireRSE, async (_req: AuthRequest, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -35,15 +35,15 @@ router.get('/', authMiddleware, requireAdmin, async (_req: AuthRequest, res: Res
         username: true,
         displayName: true,
         role: true,
-        rsm: true,
-        sm: true,
-        storeName: true,
+        region: true,
+        center: true,
+        crrName: true,
         createdAt: true,
         _count: {
           select: { uploadedData: true }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: [{ role: 'asc' }, { displayName: 'asc' }]
     });
 
     res.json({ users });
@@ -53,8 +53,41 @@ router.get('/', authMiddleware, requireAdmin, async (_req: AuthRequest, res: Res
   }
 });
 
-// POST /api/users - Create user (admin only)
-router.post('/', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
+// GET /api/users/hierarchy - Get user hierarchy
+router.get('/hierarchy', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const where: any = {};
+
+    // Role-based filtering
+    if (req.user!.role === 'STORE_MANAGER') {
+      where.center = req.user!.center;
+    } else if (req.user!.role === 'CRR') {
+      where.id = req.user!.id;
+    }
+
+    const users = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        role: true,
+        region: true,
+        center: true,
+        crrName: true
+      },
+      orderBy: [{ role: 'asc' }, { displayName: 'asc' }]
+    });
+
+    res.json({ users });
+  } catch (error) {
+    console.error('Get hierarchy error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/users - Create user (RSE only)
+router.post('/', authMiddleware, requireRSE, async (req: AuthRequest, res: Response) => {
   try {
     const data = createUserSchema.parse(req.body);
 
@@ -75,18 +108,18 @@ router.post('/', authMiddleware, requireAdmin, async (req: AuthRequest, res: Res
         passwordHash,
         displayName: data.displayName,
         role: data.role,
-        rsm: data.rsm,
-        sm: data.sm,
-        storeName: data.storeName
+        region: data.region,
+        center: data.center,
+        crrName: data.crrName
       },
       select: {
         id: true,
         username: true,
         displayName: true,
         role: true,
-        rsm: true,
-        sm: true,
-        storeName: true,
+        region: true,
+        center: true,
+        crrName: true,
         createdAt: true
       }
     });
@@ -102,8 +135,8 @@ router.post('/', authMiddleware, requireAdmin, async (req: AuthRequest, res: Res
   }
 });
 
-// PUT /api/users/:id - Update user (admin only)
-router.put('/:id', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
+// PUT /api/users/:id - Update user (RSE only)
+router.put('/:id', authMiddleware, requireRSE, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const data = updateUserSchema.parse(req.body);
@@ -131,9 +164,9 @@ router.put('/:id', authMiddleware, requireAdmin, async (req: AuthRequest, res: R
         username: true,
         displayName: true,
         role: true,
-        rsm: true,
-        sm: true,
-        storeName: true,
+        region: true,
+        center: true,
+        crrName: true,
         updatedAt: true
       }
     });
@@ -149,8 +182,8 @@ router.put('/:id', authMiddleware, requireAdmin, async (req: AuthRequest, res: R
   }
 });
 
-// DELETE /api/users/:id - Delete user (admin only)
-router.delete('/:id', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
+// DELETE /api/users/:id - Delete user (RSE only)
+router.delete('/:id', authMiddleware, requireRSE, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
