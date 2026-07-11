@@ -15,10 +15,10 @@ const registerSchema = z.object({
   username: z.string().min(3).max(50),
   password: z.string().min(6),
   displayName: z.string().min(1),
-  role: z.enum(['ADMIN', 'MANAGER', 'SALES']).default('SALES'),
-  rsm: z.string().optional(),
-  sm: z.string().optional(),
-  storeName: z.string().optional()
+  role: z.enum(['RSE', 'STORE_MANAGER', 'CRR']).default('CRR'),
+  region: z.string().optional(),
+  center: z.string().optional(),
+  crrName: z.string().optional()
 });
 
 // POST /api/auth/login
@@ -46,9 +46,9 @@ router.post('/login', async (req: Request, res: Response) => {
       id: user.id,
       username: user.username,
       role: user.role,
-      rsm: user.rsm,
-      sm: user.sm,
-      storeName: user.storeName
+      region: user.region,
+      center: user.center,
+      crrName: user.crrName
     });
 
     res.json({
@@ -58,9 +58,9 @@ router.post('/login', async (req: Request, res: Response) => {
         username: user.username,
         displayName: user.displayName,
         role: user.role,
-        rsm: user.rsm,
-        sm: user.sm,
-        storeName: user.storeName
+        region: user.region,
+        center: user.center,
+        crrName: user.crrName
       }
     });
   } catch (error) {
@@ -73,9 +73,15 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/auth/register
-router.post('/register', async (req: Request, res: Response) => {
+// POST /api/auth/register (RSE only)
+router.post('/register', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
+    // Only RSE can register new users
+    if (req.user!.role !== 'RSE') {
+      res.status(403).json({ error: 'Only RSE can register users' });
+      return;
+    }
+
     const data = registerSchema.parse(req.body);
 
     const existingUser = await prisma.user.findUnique({
@@ -95,31 +101,21 @@ router.post('/register', async (req: Request, res: Response) => {
         passwordHash,
         displayName: data.displayName,
         role: data.role,
-        rsm: data.rsm,
-        sm: data.sm,
-        storeName: data.storeName
+        region: data.region,
+        center: data.center,
+        crrName: data.crrName
       }
     });
 
-    const token = generateToken({
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      rsm: user.rsm,
-      sm: user.sm,
-      storeName: user.storeName
-    });
-
     res.status(201).json({
-      token,
       user: {
         id: user.id,
         username: user.username,
         displayName: user.displayName,
         role: user.role,
-        rsm: user.rsm,
-        sm: user.sm,
-        storeName: user.storeName
+        region: user.region,
+        center: user.center,
+        crrName: user.crrName
       }
     });
   } catch (error) {
@@ -142,9 +138,9 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
         username: true,
         displayName: true,
         role: true,
-        rsm: true,
-        sm: true,
-        storeName: true,
+        region: true,
+        center: true,
+        crrName: true,
         createdAt: true
       }
     });
