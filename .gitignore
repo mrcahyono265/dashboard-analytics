@@ -7,6 +7,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# excel files
+*.xlsx
+
+# graphify artifacts
+graphify-out/
+
 node_modules
 dist
 dist-ssr
@@ -36,3 +42,9 @@ stitch_prio_sales_dashboard.zip
 
 # Test artifacts
 test-results/
+
+# larping client
+client.md
+
+# env vars
+server/.env
