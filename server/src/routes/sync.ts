@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { requireManagerOrAdmin } from '../middleware/rbac.js';
+import { requireManagerOrAbove } from '../middleware/rbac.js';
 import { prisma } from '../lib/db.js';
 import { getAuthUrl, exchangeCodeForTokens, MicrosoftGraphClient } from '../lib/excel365.js';
 import { startSyncJob, stopSyncJob, getSyncJobStatus } from '../jobs/sync-excel365.js';
@@ -9,7 +9,7 @@ import { startSyncJob, stopSyncJob, getSyncJobStatus } from '../jobs/sync-excel3
 const router = Router();
 
 // POST /api/sync/connect - Connect Microsoft 365 account
-router.post('/connect', authMiddleware, requireManagerOrAdmin, async (req: AuthRequest, res: Response) => {
+router.post('/connect', authMiddleware, requireManagerOrAbove, async (req: AuthRequest, res: Response) => {
   try {
     const state = req.user!.id; // Use userId as state for security
 
@@ -60,7 +60,7 @@ router.get('/callback', async (req: AuthRequest, res: Response) => {
 });
 
 // POST /api/sync/start - Start syncing a file
-router.post('/start', authMiddleware, requireManagerOrAdmin, async (req: AuthRequest, res: Response) => {
+router.post('/start', authMiddleware, requireManagerOrAbove, async (req: AuthRequest, res: Response) => {
   try {
     const { fileId, accessToken } = req.body;
 
@@ -118,7 +118,7 @@ router.get('/status', authMiddleware, async (req: AuthRequest, res: Response) =>
 });
 
 // POST /api/sync/excel365 - Trigger manual sync (placeholder)
-router.post('/excel365', authMiddleware, requireManagerOrAdmin, async (req: AuthRequest, res: Response) => {
+router.post('/excel365', authMiddleware, requireManagerOrAbove, async (req: AuthRequest, res: Response) => {
   try {
     const { fileId, period } = req.body;
 
@@ -164,7 +164,7 @@ router.post('/webhook', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/sync/files - List Excel files from OneDrive
-router.get('/files', authMiddleware, requireManagerOrAdmin, async (req: AuthRequest, res: Response) => {
+router.get('/files', authMiddleware, requireManagerOrAbove, async (req: AuthRequest, res: Response) => {
   try {
     const { accessToken } = req.query;
 
