@@ -46,5 +46,8 @@ test-results/
 # larping client
 client.md
 
+# dev db prism
+server/prism/dev.db
+
 # env vars
 server/.env
