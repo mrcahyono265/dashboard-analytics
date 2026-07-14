@@ -10,7 +10,7 @@ import { DataTable } from '@/components/tables/data-table'
 import { ExportButtons } from '@/components/export/export-buttons'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { XLC } from '@/lib/data'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, formatTanggal } from '@/lib/utils'
 import { getTimeLabel } from '@/lib/constants'
 import { Smartphone, Users, Store, ArrowRightLeft, DollarSign, Calendar } from 'lucide-react'
 
@@ -40,7 +40,7 @@ export function XLCPage() {
     {
       header: 'Tanggal',
       accessorKey: 'Tanggal',
-      cell: ({ row }) => <span className="text-on-surface-variant text-sm">{row.original.Tanggal || row.original.Bulan}</span>,
+      cell: ({ row }) => <span className="text-on-surface-variant text-sm">{formatTanggal(row.original.Tanggal) || row.original.Bulan}</span>,
     },
     {
       header: 'Package',

@@ -24,3 +24,8 @@ export function formatCompact(value: number): string {
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`
   return value.toString()
 }
+
+export function formatTanggal(val: string | null | undefined): string {
+  if (!val) return ''
+  return val.replace(/,\s*\d{2}[.:]\d{2}$/, '')
+}

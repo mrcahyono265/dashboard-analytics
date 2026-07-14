@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useStore } from '@/lib/store'
+import { formatTanggal } from '@/lib/utils'
 import { api } from '@/lib/api'
 import { getCurrentUser, type User } from '@/lib/auth'
 import type { DashboardData } from '@/lib/data'
@@ -420,7 +421,7 @@ export function DataEntryPage() {
       const val = row[f.key]
       defaults[f.key] = val !== undefined && val !== null ? String(val) : ''
     }
-    defaults.Tanggal = row.Tanggal || TODAY
+    defaults.Tanggal = formatTanggal(row.Tanggal) || TODAY
     if (isTargetTab) defaults.period = row.period || monthFilter
     else defaults.period = monthFilter
     setForm(defaults)
@@ -660,7 +661,7 @@ export function DataEntryPage() {
                         const val = row[f.key]
                         const display = f.type === 'number' && val
                           ? Number(val).toLocaleString('id-ID')
-                          : String(val ?? '—').slice(0, 40)
+                          : formatTanggal(String(val ?? '—')).slice(0, 40)
                         return (
                           <td key={f.key} className="py-3 px-3 text-on-surface truncate max-w-[200px] whitespace-nowrap">
                             {display}
