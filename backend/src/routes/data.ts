@@ -45,7 +45,12 @@ async function buildDataFilter(user: any, sheetType?: string) {
 // GET /api/data/active-source
 router.get('/active-source', authMiddleware, async (req: AuthRequest, res: Response) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { activeSource: true, sourceFileName: true } });
-  res.json({ activeSource: user?.activeSource || 'upload', sourceFileName: user?.sourceFileName || null });
+  const dataCount = await prisma.dataRecord.count({ where: { uploadedBy: req.user!.id } });
+  if (dataCount === 0) {
+    res.json({ activeSource: null, sourceFileName: null });
+    return;
+  }
+  res.json({ activeSource: user?.activeSource || null, sourceFileName: user?.sourceFileName || null });
 });
 
 // POST /api/data/switch-source — clean slate + activate from staged/url/excel365

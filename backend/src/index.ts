@@ -19,6 +19,9 @@ import { resumeAllSyncJobs } from './jobs/sync-excel365.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy (reverse proxy nginx)
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
@@ -46,18 +49,6 @@ app.use('/api/stores', storeRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/user-assignments', userAssignmentRoutes);
 app.use('/api/event-types', eventTypeRoutes);
-
-// Static serve for data/ directory — behind auth to protect PII
-const dataDir = path.resolve(process.cwd(), '..', 'data');
-app.use('/api/files', (req, res, next) => {
-  // ponytail: inline auth check — refactored to middleware if more protected statics appear
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-  next();
-}, express.static(dataDir));
 
 // Serve uploaded files (avatars) — nosniff prevents content-type sniffing attacks
 const uploadsDir = path.resolve(process.cwd(), 'uploads');

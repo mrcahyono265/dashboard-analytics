@@ -3,8 +3,6 @@ import * as XLSX from 'xlsx'
 import { useStore } from '@/lib/store'
 import { api } from '@/lib/api'
 import { parseExcelData, parseXLC, parseGSF, parseMerchant, parseWO, parseEXPO, parseXLSatu, parseELITE, parsePromotor, parseReportData } from '@/lib/excel'
-import { parsePrioXLC } from '@/lib/parsers/parse-prioxlc'
-import { parseWOAgent } from '@/lib/parsers/parse-woagent'
 import { enrichDailyActivity } from '@/lib/daily-activity'
 import type { DashboardData, ReportData } from '@/lib/data'
 
@@ -75,32 +73,8 @@ export function useDataLoader() {
   }, [googleSheetUrl, setData, setLoading, setError])
 
   const loadDefaultExcel = useCallback(async () => {
-    try {
-      const [prioResp, reportResp] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/files/Achievement%20Prio%20(1).xlsx`),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/files/Achivement%20XLC%20dan%20GSF%20Juli%202026.xlsx`),
-      ])
-
-      if (!prioResp.ok) throw new Error('Default Excel file not found')
-
-      const [prioBuffer, reportBuffer] = await Promise.all([
-        prioResp.arrayBuffer(),
-        reportResp.ok ? reportResp.arrayBuffer() : null,
-      ])
-
-      const parsed = parseExcelData(prioBuffer)
-      setData(parsed)
-
-      if (reportBuffer) {
-        const reportWb = XLSX.read(reportBuffer, { type: 'array', cellDates: true })
-        const reportParsed = parseReportData(reportWb)
-        setReportData(reportParsed)
-      }
-    } catch (err) {
-      setLoading(false)
-      console.warn('No default Excel file available, please upload manually')
-    }
-  }, [setData, setReportData, setLoading])
+    setLoading(false)
+  }, [setLoading])
 
   const fetchFromApi = useCallback(async (period?: string) => {
     try {
@@ -132,21 +106,6 @@ export function useDataLoader() {
 
       setData(parsed as DashboardData)
       setReportData(reportParts as ReportData)
-
-      try {
-        const resp = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/files/Achievement%20Prio%20(1).xlsx`)
-        if (resp.ok) {
-          const buf = await resp.arrayBuffer()
-          const wb = XLSX.read(buf, { type: 'array', cellDates: true })
-          const prioXLC = wb.Sheets['PrioXLC'] ? parsePrioXLC(wb.Sheets['PrioXLC']) : undefined
-          const woAgent = wb.Sheets['WOAgent'] ? parseWOAgent(wb.Sheets['WOAgent']) : undefined
-          if (prioXLC || woAgent) {
-            setData({ ...parsed, prioXLC, woAgent } as DashboardData)
-          }
-        }
-      } catch {
-        // daily file not available — optional data
-      }
 
       const finalReport = enrichDailyActivity(reportParts as ReportData, parsed.xlc, parsed.gsf)
       setReportData(finalReport)

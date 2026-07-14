@@ -62,6 +62,7 @@ export function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
+                  autoComplete="username"
                   className="h-10 w-full rounded-2xl border border-outline-variant bg-surface-container-low px-4 text-sm outline-none placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary text-on-surface transition-all"
                   autoFocus
                 />
@@ -74,6 +75,7 @@ export function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
+                    autoComplete="current-password"
                     className="h-10 w-full rounded-2xl border border-outline-variant bg-surface-container-low px-4 pr-10 text-sm outline-none placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary text-on-surface transition-all"
                   />
                   <button

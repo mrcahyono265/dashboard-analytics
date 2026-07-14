@@ -57,7 +57,7 @@ const defaultFilters: FilterState = {
 export const useStore = create<AppState>((set) => ({
   data: null,
   reportData: { xlcReport: [], gsfReport: [], woReport: [], expoReport: [], storeMaster: [], ranking: [] },
-  activeSource: 'upload',
+  activeSource: 'none',
   loading: false,
   loadingMessage: null,
   error: null,

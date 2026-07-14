@@ -253,7 +253,7 @@ export function SettingsPage() {
   const { user } = useAuth()
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [activeInfo, setActiveInfo] = useState<{ activeSource: string; sourceFileName: string | null } | null>(null)
+  const [activeInfo, setActiveInfo] = useState<{ activeSource: string | null; sourceFileName: string | null } | null>(null)
   const [exportSettings, setExportSettings] = useState<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -531,20 +531,24 @@ export function SettingsPage() {
                 <div className="p-4 bg-surface-container rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {activeInfo?.activeSource === 'upload' ? (
+                      {!activeInfo?.activeSource ? (
+                        <Upload className="h-5 w-5 text-on-surface-variant/40" />
+                      ) : activeInfo.activeSource === 'upload' ? (
                         <Upload className="h-5 w-5 text-primary" />
-                      ) : activeInfo?.activeSource === 'url' ? (
+                      ) : activeInfo.activeSource === 'url' ? (
                         <Link className="h-5 w-5 text-primary" />
                       ) : (
                         <Cloud className="h-5 w-5 text-primary" />
                       )}
                       <div>
                         <p className="font-medium text-sm">
-                          {activeInfo?.activeSource === 'upload'
-                            ? 'Upload'
-                            : activeInfo?.activeSource === 'url'
-                              ? 'URL Sync'
-                              : 'Microsoft 365'}
+                          {!activeInfo?.activeSource
+                            ? 'None'
+                            : activeInfo.activeSource === 'upload'
+                              ? 'Upload'
+                              : activeInfo.activeSource === 'url'
+                                ? 'URL Sync'
+                                : 'Microsoft 365'}
                         </p>
                         {activeInfo?.sourceFileName && (
                           <p className="text-xs text-on-surface-variant mt-0.5 truncate max-w-64" title={activeInfo.sourceFileName}>

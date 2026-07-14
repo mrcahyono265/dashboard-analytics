@@ -8,12 +8,12 @@ import {
   Cloud, RefreshCw, FileSpreadsheet, CheckCircle, XCircle,
   Loader2, Download, AlertTriangle, Globe, FileUp, Upload,
 } from 'lucide-react'
-import { api } from '@/lib/api'
+import { api, API_ORIGIN } from '@/lib/api'
 import { useStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
-type SourceType = 'upload' | 'url' | 'excel365'
+type SourceType = 'upload' | 'url' | 'excel365' | 'none'
 
 interface SyncStatus {
   connected: boolean
@@ -51,6 +51,7 @@ const SOURCE_LABELS: Record<SourceType, string> = {
   upload: 'File Upload',
   url: 'URL Sync',
   excel365: 'OneDrive',
+  none: 'None',
 }
 
 function SourceSwitchDialog({
@@ -115,7 +116,7 @@ function SourceSwitchDialog({
 }
 
 export function DataSourcePage() {
-  const [activeSource, setActiveSource] = useState<SourceType>('upload')
+  const [activeSource, setActiveSource] = useState<SourceType>('none')
   const [activeTab, setActiveTab] = useState<SourceType>('upload')
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null)
   const [files, setFiles] = useState<ExcelFile[]>([])
@@ -135,7 +136,7 @@ export function DataSourcePage() {
   const loadStatus = useCallback(async () => {
     try {
       const [src, status] = await Promise.all([api.getActiveSource(), api.getSyncStatus()])
-      setActiveSource(src.activeSource as SourceType)
+      setActiveSource((src.activeSource as SourceType) || 'none')
       setSyncStatus(status)
       if (status?.url) setUrlInput(status.url)
     } catch {}
@@ -312,8 +313,11 @@ export function DataSourcePage() {
             activeSource === 'upload' && 'bg-blue-400',
             activeSource === 'url' && 'bg-emerald-400',
             activeSource === 'excel365' && 'bg-violet-400',
+            activeSource === 'none' && 'bg-on-surface-variant/40',
           )} />
-          <span className="text-sm font-bold">{SOURCE_LABELS[activeSource]}</span>
+          <span className="text-sm font-bold">
+            {activeSource === 'none' ? 'None' : SOURCE_LABELS[activeSource]}
+          </span>
         </div>
       </div>
 
@@ -440,7 +444,7 @@ export function DataSourcePage() {
               )}
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setUrlInput(`${window.location.origin.replace(/:\d+$/, ':3001')}/api/files/Achievement%20Prio%20(1).xlsx`)}>
+                <Button variant="outline" size="sm" onClick={() => setUrlInput(`${API_ORIGIN}/api/files/Achievement%20Prio%20(1).xlsx`)}>
                   <FileSpreadsheet className="h-3 w-3 mr-1" />Use Test File
                 </Button>
               </div>
@@ -530,10 +534,10 @@ export function DataSourcePage() {
                       </div>
                       <Button variant="outline" size="sm" onClick={async () => {
                         if (syncStatus?.active) {
-                          try { await api.stopAutoSync(); toast.success('Auto-sync stopped') }
+                          try { await api.stopUrlAutoSync(); toast.success('Auto-sync stopped') }
                           catch { toast.error('Failed to stop') }
                         } else {
-                          try { await api.startAutoSync(syncStatus?.fileId || selectedOneDriveFile!); toast.success('Auto-sync started') }
+                          try { await api.startUrlAutoSync(syncStatus?.fileId || selectedOneDriveFile!); toast.success('Auto-sync started') }
                           catch (err) { toast.error(err instanceof Error ? err.message : 'Failed to start') }
                         }
                         await loadStatus()

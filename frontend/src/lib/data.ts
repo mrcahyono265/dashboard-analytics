@@ -230,4 +230,4 @@ export interface DashboardData {
   woAgent?: WOAgentItem[]
 }
 
-export type ActiveSource = 'upload' | 'excel365' | 'url'
+export type ActiveSource = 'upload' | 'excel365' | 'url' | 'none'

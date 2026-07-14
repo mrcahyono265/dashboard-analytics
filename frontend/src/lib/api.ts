@@ -260,7 +260,7 @@ class ApiClient {
   }
 
   async getSyncStatus() {
-    return this.request<{ connected: boolean; active: boolean; fileId: string | null; account: { displayName: string; email: string } | null; recentSyncs: any[] }>('/sync/status');
+    return this.request<{ connected: boolean; active: boolean; fileId: string | null; urlActive: boolean; url: string | null; account: { displayName: string; email: string } | null; recentSyncs: any[] }>('/sync/status');
   }
 
   async syncConnect() {
@@ -398,7 +398,7 @@ class ApiClient {
 
   // ─── Source switch ────────────────────────────────────────
   async getActiveSource() {
-    return this.request<{ activeSource: string; sourceFileName: string | null }>('/data/active-source');
+    return this.request<{ activeSource: string | null; sourceFileName: string | null }>('/data/active-source');
   }
 
   async switchSource(source: 'upload' | 'url' | 'excel365', opts?: { sourceFileName?: string; url?: string; fileId?: string }) {
