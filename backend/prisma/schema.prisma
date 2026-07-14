@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  passwordHash  String
+  displayName   String
+  role          String    @default("CRR") // RSE, STORE_MANAGER, CRR
+
+  // Hierarki
+  region        String?   // "East", "West" (untuk RSE)
+  center        String?   // "XLC Madiun" (untuk Store Manager)
+  crrName       String?   // "Dyah Ayu Maharani" (untuk CRR)
+
+  // Profil
+  email         String?
+  phone         String?
+  avatarUrl     String?   // "/uploads/avatars/<filename>"
+  channel       String?   // "XLC" | "GSF" — for CRR role, which channel they handle
+  sourceFileName String?  // Original filename of active data source
+  exportSettings Json?    // PDF export configuration
+  microsoftToken String?  // AES-256-GCM encrypted Microsoft OAuth token JSON
+
+  activeSource    String   @default("upload") // "upload" | "excel365" | "url"
+  autoSyncEnabled Boolean  @default(false)
+  syncConfig      String?  // JSON: { type: 'onedrive', fileId } | { type: 'url', url }
+  stagingJson     String?  // JSON: parsed data yang diupload tapi belum diaktifkan
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  uploadedData  DataRecord[]
+  assignments   UserAssignment[]
+}
+
+model DataRecord {
+  id          String   @id @default(cuid())
+  sheetType   String   // XLC, GSF, Merchant, WO, EXPO, XLSatu, ELITE, Promotor, XLC_REPORT, WO_REPORT, EXPO_REPORT, STORE_MASTER, RANKING
+  period      String   // e.g., "2026-07"
+  category    String   @default("entry") // "entry" (transaksi manual) | "report" (pivot XL Axiata)
+  dataJson    String   // Parsed Excel data (JSON string)
+  uploadedBy  String
+  source      String   @default("upload") // "upload" | "excel365" | "manual"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [uploadedBy], references: [id])
+
+  @@unique([sheetType, period, uploadedBy, category])
+}
+
+model Target {
+  id          String   @id @default(cuid())
+  channel     String   // XLC, GSF, Merchant, WO, EXPO, XLSatu
+  targetValue Float
+  period      String   // e.g., "2026-07"
+  center      String    @default("") // "" = global, "XLC Madiun" = per center
+  staffName   String   @default("") // CRR/Agent name ("" = store-level target)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, period, center, staffName])
+}
+
+model Store {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  channel   String   // XLC, GSF, WO, EXPO, Merchant, XL Satu
+  region    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Package {
+  id        String   @id @default(cuid())
+  name      String
+  channel   String   // XLC, GSF, Merchant, WO, EXPO, XL Satu
+  category  String?  // "PRIO XLC", "XL Satu", "ELITE", "Merchant", "WO", "EXPO"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, channel])
+}
+
+model UserAssignment {
+  id            String   @id @default(cuid())
+  userId        String
+  channel       String   // XLC, GSF, Merchant, WO, EXPO, XL Satu
+  storeName     String   // Nama store (denormalized)
+  roleType      String   // CRR, RSM, SM, OPERATOR, AGENT_WO, PROMOTOR, LEADER
+  usernameAgent String?  // Hanya untuk CRR/AGENT_WO/PROMOTOR
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeName, channel, roleType])
+  @@index([storeName, channel])
+  @@index([channel, roleType])
+}
+
+model EventType {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SyncLog {
+  id           String   @id @default(cuid())
+  source       String   // "excel365"
+  fileId       String?  // Microsoft Graph file ID
+  status       String   // "success" | "error" | "pending"
+  recordsCount Int?
+  error        String?
+  createdAt    DateTime @default(now())
+}

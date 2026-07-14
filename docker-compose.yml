@@ -1,0 +1,63 @@
+﻿services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-analitics}
+      POSTGRES_USER: ${DB_USER:-analitics}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-analitics}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - analitics-net
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-analitics}:${DB_PASSWORD}@db:5432/${DB_NAME:-analitics}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8082}
+      MS_CLIENT_ID: ${MS_CLIENT_ID:-}
+      MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
+      MS_TENANT_ID: ${MS_TENANT_ID:-}
+      MS_REDIRECT_URI: ${MS_REDIRECT_URI:-}
+      MS_TOKEN_ENCRYPTION_KEY: ${MS_TOKEN_ENCRYPTION_KEY:-}
+      NODE_ENV: production
+    volumes:
+      - uploads:/app/uploads
+    networks:
+      - analitics-net
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-8082}:80"
+    networks:
+      - analitics-net
+
+volumes:
+  pgdata:
+  uploads:
+
+networks:
+  analitics-net:
+    driver: bridge

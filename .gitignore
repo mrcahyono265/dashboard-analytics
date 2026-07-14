@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -7,16 +7,25 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# excel files
+# Excel files (source data, too large for git)
 *.xlsx
+data/
 
-# graphify artifacts
-graphify-out/
+# Dependencies
+node_modules/
 
-node_modules
-dist
-dist-ssr
+# Build outputs
+dist/
+dist-ssr/
+backend/dist/
+
+# Local env files
 *.local
+.env
+frontend/.env
+backend/.env
+
+# TypeScript
 *.tsbuildinfo
 
 # Editor directories and files
@@ -25,7 +34,7 @@ dist-ssr
 .idea
 .DS_Store
 *.suo
-*.ntvs*
+*..ntvs*
 *.njsproj
 *.sln
 *.sw?
@@ -33,21 +42,21 @@ dist-ssr
 # OpenCode workspace
 .opencode/
 
-# Source Excel data (too large for git)
-data/
-public/data/*.xlsx
+# MCP tool caches
+.playwright-mcp/
+.serena/project.local.yml
+
+# Backend runtime uploads (keep dir, ignore contents)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Database
+backend/prisma/dev.db
+*.sql
 
 # Reference files
 stitch_prio_sales_dashboard.zip
 
 # Test artifacts
 test-results/
-
-# larping client
 client.md
-
-# dev db prism
-server/prisma/dev.db
-
-# env vars
-server/.env

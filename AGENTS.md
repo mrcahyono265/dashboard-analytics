@@ -1,8 +1,8 @@
-# Prio Dashboard — AI Agent Context
+# Analitics — AI Agent Context
 
 ## Project Identity
 
-**Prio Dashboard** — Sales performance analytics dashboard for XL Axiata.
+**Analitics** — Sales performance analytics dashboard for XL Axiata.
 
 **Purpose:** Replace manual Excel reporting with an interactive web dashboard. Stakeholder (Manager/Owner) bisa lihat perkembangan data secara visual tanpa buka Excel.
 
@@ -52,80 +52,130 @@ Source: Excel Spreadsheet (XLSX/CSV) → Upload → Client-side parsing → Zust
 - `Bulan` — Month string: "Jan-24", "Januari 2024", "01/2024"
 - `Tanggal` — Full date: "15/01/2024, 08.30" (output of formatExcelDate)
 
-Parse all dates via `src/lib/date-parser.ts`.
+Parse all dates via `frontend/src/lib/date-parser.ts`.
 
 ---
 
 ## File Structure
 
 ```
-src/
-├── lib/                    # Utilities, config, constants
-│   ├── auth.ts             # Login/session (localStorage)
-│   ├── chart-config.ts     # Shared chart colors, tooltip, axis styles
-│   ├── constants.ts        # CHANNEL_TARGETS, getTimeLabel, column factories
-│   ├── data.ts             # TypeScript interfaces for all 8 data types
-│   ├── date-parser.ts      # Parse all date formats, time grouping
-│   ├── excel.ts            # Excel parsing + duplicate detection
-│   ├── logger.ts           # Telemetry/logging system
-│   ├── sparkline.ts        # Monthly sparkline computation
-│   ├── store.ts            # Zustand store (data, filters, timeMode, dateRange)
-│   └── utils.ts            # cn(), formatCurrency(), formatNumber(), formatCompact()
+frontend/                   # React 19 + Vite 8 app
+├── src/
+│   ├── lib/                # Utilities, config, constants
+│   │   ├── api.ts          # API client (REST calls)
+│   │   ├── auth.ts         # Login/session (API + localStorage fallback)
+│   │   ├── chart-config.ts # Shared chart colors, tooltip, axis styles
+│   │   ├── constants.ts    # CHANNEL_TARGETS, getTimeLabel, column factories
+│   │   ├── data.ts         # TypeScript interfaces for all 8 data types
+│   │   ├── date-parser.ts  # Parse all date formats, time grouping
+│   │   ├── excel.ts        # Excel parsing + duplicate detection
+│   │   ├── logger.ts       # Telemetry/logging system
+│   │   ├── sparkline.ts    # Monthly sparkline computation
+│   │   ├── store.ts        # Zustand store (data, filters, timeMode, dateRange)
+│   │   └── utils.ts        # cn(), formatCurrency(), formatNumber(), formatCompact()
+│   │
+│   ├── hooks/              # React hooks
+│   │   ├── use-auth.ts     # Login/logout/session
+│   │   ├── use-channel-data.ts # useAllChannelData()
+│   │   ├── use-data.ts     # useDataLoader() — Excel/Google Sheets import
+│   │   ├── use-filtered-data.ts # apply Bulan/RSM/SM/Store/Channel filters
+│   │   ├── use-page-context.ts # common page init
+│   │   ├── use-perf.ts     # Performance tracking
+│   │   └── use-time-data.ts # useTimeSeries(), useGroupedByCategory(), usePeriodComparison()
+│   │
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── app-layout.tsx  # Sidebar + Header + FilterBar + TimeFilter + Outlet
+│   │   │   ├── header.tsx      # Title, upload, filter, theme, user, logout
+│   │   │   └── sidebar.tsx     # Collapsible nav with groups
+│   │   ├── charts/
+│   │   │   ├── kpi-card.tsx    # KPI card with value, trend, sparkline
+│   │   │   ├── bar-chart.tsx   # Vertical/horizontal bar chart
+│   │   │   ├── pie-chart.tsx   # Donut/pie chart
+│   │   │   ├── line-chart.tsx  # Multi-line chart
+│   │   │   └── area-chart.tsx  # Multi-category area chart
+│   │   ├── filters/
+│   │   │   ├── filter-bar.tsx  # Multi-select dropdowns
+│   │   │   └── time-filter.tsx # Daily/Weekly/Monthly/Yearly toggle + date range
+│   │   ├── tables/
+│   │   │   └── data-table.tsx  # TanStack table with search, sort, pagination
+│   │   ├── export/
+│   │   │   └── export-buttons.tsx # Export Excel/CSV/PDF
+│   │   ├── dev/
+│   │   │   └── log-viewer.tsx  # Dev-only log panel (Ctrl+`)
+│   │   ├── error-boundary.tsx  # React error boundary
+│   │   └── ui/                 # Reusable primitives (card, badge, button, skeleton)
+│   │
+│   ├── pages/
+│   │   ├── login.tsx       # Login form
+│   │   ├── overview.tsx    # Main dashboard (KPIs + charts)
+│   │   ├── xlc.tsx         # XLC channel detail
+│   │   ├── gsf.tsx         # GSF channel detail
+│   │   ├── merchant.tsx    # Merchant channel detail
+│   │   ├── wo.tsx          # WO Agent channel detail
+│   │   ├── expo.tsx        # EXPO channel detail
+│   │   ├── xlsatu.tsx      # XL Satu channel detail
+│   │   ├── elite.tsx       # ELITE operator comparison
+│   │   ├── promotor.tsx    # Promotor performance
+│   │   ├── target.tsx      # Target vs Realisasi
+│   │   ├── reporting.tsx   # Full reporting page
+│   │   ├── monitoring.tsx  # Monitoring with progress bars
+│   │   ├── upload.tsx      # Excel upload page
+│   │   ├── excel365-settings.tsx # Microsoft 365 sync settings
+│   │   └── not-found.tsx   # 404 page
+│   │
+│   ├── providers/
+│   │   └── theme-provider.tsx # Light/dark theme context
+│   │
+│   ├── App.tsx             # Router + lazy loading + auth guard
+│   ├── main.tsx            # Entry point
+│   └── index.css           # Tailwind + CSS variables + animations
 │
-├── hooks/                  # React hooks
-│   ├── use-auth.ts         # Login/logout/session
-│   ├── use-channel-data.ts # useAllChannelData() — all filtered channels at once
-│   ├── use-data.ts         # useDataLoader() — Excel/Google Sheets import
-│   ├── use-filtered-data.ts # useFilteredData() — apply Bulan/RSM/SM/Store/Channel filters
-│   ├── use-page-context.ts # usePageContext() — common page init (data + time + period)
-│   ├── use-perf.ts         # Performance tracking hooks
-│   └── use-time-data.ts    # useTimeSeries(), useGroupedByCategory(), usePeriodComparison()
+├── public/                 # Static assets
+│   ├── favicon.svg
+│   └── icons.svg
 │
-├── components/
-│   ├── layout/
-│   │   ├── app-layout.tsx  # Sidebar + Header + FilterBar + TimeFilter + Outlet
-│   │   ├── header.tsx      # Title, upload, filter, theme, user, logout
-│   │   └── sidebar.tsx     # Collapsible nav with groups
-│   ├── charts/
-│   │   ├── kpi-card.tsx    # KPI card with value, trend, sparkline
-│   │   ├── bar-chart.tsx   # Vertical/horizontal bar chart
-│   │   ├── pie-chart.tsx   # Donut/pie chart
-│   │   ├── line-chart.tsx  # Multi-line chart
-│   │   └── area-chart.tsx  # Multi-category area chart
-│   ├── filters/
-│   │   ├── filter-bar.tsx  # Multi-select dropdowns (Bulan, RSM, SM, Store, Channel)
-│   │   └── time-filter.tsx # Daily/Weekly/Monthly/Yearly toggle + date range picker
-│   ├── tables/
-│   │   └── data-table.tsx  # TanStack table with search, sort, pagination
-│   ├── export/
-│   │   └── export-buttons.tsx # Export Excel/CSV/PDF
-│   ├── dev/
-│   │   └── log-viewer.tsx  # Dev-only log panel (Ctrl+`)
-│   ├── error-boundary.tsx  # React error boundary
-│   └── ui/                 # Reusable primitives (card, badge, button, skeleton)
+├── index.html
+├── vite.config.ts
+├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
+├── package.json
+└── .env
+
+backend/                    # Express + Prisma + PostgreSQL API (Bun)
+├── src/
+│   ├── index.ts            # Express server entry
+│   ├── routes/
+│   │   ├── auth.ts         # Login/register/me
+│   │   ├── data.ts         # CRUD data records, Excel upload
+│   │   ├── targets.ts      # Target management
+│   │   ├── sync.ts         # Microsoft 365 sync
+│   │   └── users.ts        # User management (RSE only)
+│   ├── middleware/
+│   │   ├── auth.ts         # JWT auth middleware
+│   │   └── rbac.ts         # Role-based access (RSE/STORE_MANAGER/CRR)
+│   ├── lib/
+│   │   ├── db.ts           # Prisma client
+│   │   ├── parser.ts       # Server-side Excel parser
+│   │   └── excel365.ts     # Microsoft Graph API client
+│   └── jobs/
+│       └── sync-excel365.ts # Auto-sync job
 │
-├── pages/
-│   ├── login.tsx           # Login form
-│   ├── overview.tsx        # Main dashboard (KPIs + charts)
-│   ├── xlc.tsx             # XLC channel detail
-│   ├── gsf.tsx             # GSF channel detail
-│   ├── merchant.tsx        # Merchant channel detail
-│   ├── wo.tsx              # WO Agent channel detail
-│   ├── expo.tsx            # EXPO channel detail
-│   ├── xlsatu.tsx          # XL Satu channel detail
-│   ├── elite.tsx           # ELITE operator comparison
-│   ├── promotor.tsx        # Promotor performance
-│   ├── target.tsx          # Target vs Realisasi
-│   ├── reporting.tsx       # Full reporting page
-│   ├── monitoring.tsx      # Monitoring with progress bars
-│   └── not-found.tsx       # 404 page
+├── prisma/
+│   ├── schema.prisma       # DB schema (User, DataRecord, Target, SyncLog)
+│   └── seed.ts             # Seed data
 │
-├── providers/
-│   └── theme-provider.tsx  # Light/dark theme context
-│
-├── App.tsx                 # Router + lazy loading + auth guard
-├── main.tsx                # Entry point
-└── index.css               # Tailwind + CSS variables + animations
+├── package.json
+├── tsconfig.json
+└── .env.example
+
+scripts/                    # DevOps scripts
+├── deploy.sh               # Deploy to EC2
+├── ec2-setup.sh            # Initial EC2 setup
+├── backup-db.sh            # Database backup
+├── health-check.sh         # Server health check
+├── generate-dummy-data.mjs # Generate test data
+├── test-ui.mjs             # UI test script
+└── DEPLOY.md               # Deployment guide
 ```
 
 ---
@@ -274,7 +324,7 @@ data-mono: 14px/20px font-500
 --color-outline-variant: #434655
 ```
 
-**Light Mode ("Prio Dashboard"):**
+**Light Mode ("Analitics"):**
 ```css
 /* Core surfaces */
 --color-background: #f9f9ff     /* Light grayish blue */
