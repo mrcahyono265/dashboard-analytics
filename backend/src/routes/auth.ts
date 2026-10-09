@@ -2,11 +2,12 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import multer from 'multer';
+import jwt from 'jsonwebtoken';
 import path from 'path';
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
 import { prisma } from '../lib/db.js';
-import { generateToken, authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS, clearAuthCookie, generateToken, authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 // Brute-force protection: 5 login attempts per 15 min per IP
 const loginLimiter = rateLimit({
@@ -84,14 +85,20 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
       id: user.id,
       username: user.username,
       role: user.role,
+      sessionVersion: user.sessionVersion,
       region: user.region,
       center: user.center,
       crrName: user.crrName,
       channel: user.channel
     });
+    const decodedToken = jwt.decode(token);
+    const expiresAt = typeof decodedToken === 'object' && decodedToken ? decodedToken.exp : undefined;
+    res.cookie(AUTH_COOKIE_NAME, token, {
+      ...AUTH_COOKIE_OPTIONS,
+      expires: expiresAt ? new Date(expiresAt * 1000) : undefined,
+    });
 
     res.json({
-      token,
       user: {
         id: user.id,
         username: user.username,
@@ -112,6 +119,21 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
       return;
     }
     console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/auth/logout — revoke every token issued to this user and clear the browser cookie
+router.post('/logout', authMiddleware, async (req: AuthRequest, res: Response) => {
+  clearAuthCookie(res);
+  try {
+    await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { sessionVersion: { increment: 1 } },
+    });
+    res.json({ message: 'Logged out' });
+  } catch (error) {
+    console.error('Logout error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

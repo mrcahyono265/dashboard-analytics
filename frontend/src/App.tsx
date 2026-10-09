@@ -5,7 +5,8 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { LoginPage } from '@/pages/login'
 import { NotFoundPage } from '@/pages/not-found'
-import { useAuth } from '@/hooks/use-auth'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
+import { Toaster } from 'sonner'
 
 const OverviewPage = lazy(() => import('@/pages/overview').then((m) => ({ default: m.OverviewPage })))
 const XLCPage = lazy(() => import('@/pages/xlc').then((m) => ({ default: m.XLCPage })))
@@ -59,43 +60,46 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route
-                element={
-                  <AuthGuard>
-                    <AppLayout />
-                  </AuthGuard>
-                }
-              >
-                <Route index element={<OverviewPage />} />
-                <Route path="/achievement/xlc-gsf" element={<AchievementXLCGSFPage />} />
-                <Route path="/achievement/wo" element={<AchievementWOPage />} />
-                <Route path="/achievement/expo" element={<AchievementEXPOPage />} />
-                <Route path="/xlc" element={<XLCPage />} />
-                <Route path="/gsf" element={<GSFPage />} />
-                <Route path="/merchant" element={<MerchantPage />} />
-                <Route path="/wo" element={<WOPage />} />
-                <Route path="/expo" element={<EXPOPage />} />
-                <Route path="/prio-xlc" element={<PrioXLCPage />} />
-                <Route path="/xlsatu" element={<XLSatuPage />} />
-                <Route path="/elite" element={<ELITEPage />} />
-                <Route path="/promotor" element={<PromotorPage />} />
-                <Route path="/target" element={<TargetPage />} />
-                <Route path="/reporting" element={<ReportingPage />} />
-                <Route path="/monitoring" element={<MonitoringPage />} />
-                <Route path="/wo-agent" element={<WOAgentPage />} />
-                <Route path="/data-entry" element={<DataEntryPage />} />
-                <Route path="/data-source" element={<DataSourcePage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                {/* Legacy redirects */}
-                <Route path="/upload" element={<Navigate to="/data-source" replace />} />
-                <Route path="/excel365" element={<Navigate to="/data-source" replace />} />
-              </Route>
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </Suspense>
+          <AuthProvider>
+            <Toaster position="top-right" richColors closeButton />
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route
+                  element={
+                    <AuthGuard>
+                      <AppLayout />
+                    </AuthGuard>
+                  }
+                >
+                  <Route index element={<OverviewPage />} />
+                  <Route path="/achievement/xlc-gsf" element={<AchievementXLCGSFPage />} />
+                  <Route path="/achievement/wo" element={<AchievementWOPage />} />
+                  <Route path="/achievement/expo" element={<AchievementEXPOPage />} />
+                  <Route path="/xlc" element={<XLCPage />} />
+                  <Route path="/gsf" element={<GSFPage />} />
+                  <Route path="/merchant" element={<MerchantPage />} />
+                  <Route path="/wo" element={<WOPage />} />
+                  <Route path="/expo" element={<EXPOPage />} />
+                  <Route path="/prio-xlc" element={<PrioXLCPage />} />
+                  <Route path="/xlsatu" element={<XLSatuPage />} />
+                  <Route path="/elite" element={<ELITEPage />} />
+                  <Route path="/promotor" element={<PromotorPage />} />
+                  <Route path="/target" element={<TargetPage />} />
+                  <Route path="/reporting" element={<ReportingPage />} />
+                  <Route path="/monitoring" element={<MonitoringPage />} />
+                  <Route path="/wo-agent" element={<WOAgentPage />} />
+                  <Route path="/data-entry" element={<DataEntryPage />} />
+                  <Route path="/data-source" element={<DataSourcePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  {/* Legacy redirects */}
+                  <Route path="/upload" element={<Navigate to="/data-source" replace />} />
+                  <Route path="/excel365" element={<Navigate to="/data-source" replace />} />
+                </Route>
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>
     </ErrorBoundary>

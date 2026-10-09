@@ -8,13 +8,12 @@ import { LogViewer } from '@/components/dev/log-viewer'
 import { LoadingOverlay } from '@/components/ui/loading-overlay'
 import { useDataLoader } from '@/hooks/use-data'
 import { useMediaQuery } from '@/hooks/use-media-query'
-import { api } from '@/lib/api'
+import { API_BASE } from '@/lib/api'
 import { FilterBar, type FilterOption } from '@/components/filters/filter-bar'
 import { DrillDownBar } from '@/components/filters/drill-down-bar'
 import { useStore } from '@/lib/store'
 import { useAuth } from '@/hooks/use-auth'
 import { getRoleScope, filterByRoleScope } from '@/lib/rbac'
-import { Toaster } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
 
 const DASHBOARD_PATHS = new Set([
@@ -112,10 +111,7 @@ export function AppLayout() {
 
   // SSE: real-time updates from server-side auto-sync
   useEffect(() => {
-    const token = api.getToken()
-    if (!token) return
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
-    const es = new EventSource(`${API_BASE}/sync/events?token=${token}`)
+    const es = new EventSource(`${API_BASE}/sync/events`, { withCredentials: true })
     es.addEventListener('data-updated', () => fetchFromApi())
     return () => es.close()
   }, [fetchFromApi])
@@ -198,7 +194,6 @@ export function AppLayout() {
         </main>
       </div>
 
-      <Toaster position="top-right" richColors closeButton />
       <LoadingOverlay />
       <LogViewer />
     </div>

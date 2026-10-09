@@ -1,4 +1,4 @@
-import api, { API_ORIGIN } from './api'
+import api from './api'
 
 export interface User {
   id?: string
@@ -14,159 +14,45 @@ export interface User {
   avatarUrl?: string | null
 }
 
-const SESSION_KEY = 'prio_dashboard_session'
-const USERS_KEY = 'prio_dashboard_users'
-const AUTH_MODE_KEY = 'prio_dashboard_auth_mode'
-
-// Simple hash function (for local fallback)
-function simpleHash(str: string): string {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
+export async function login(username: string, password: string): Promise<User> {
+  try {
+    const result = await api.login(username, password)
+    return result.user
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error('Tidak dapat terhubung ke backend. Pastikan backend aktif dan VITE_API_URL benar.')
+    }
+    if (error instanceof Error && error.message === 'Invalid credentials') {
+      throw new Error('Username atau password salah.')
+    }
+    if (error instanceof Error && error.message.startsWith('Too many login attempts')) {
+      throw new Error('Terlalu banyak percobaan login. Coba lagi dalam 15 menit.')
+    }
+    throw error
   }
-  return 'h_' + Math.abs(hash).toString(36)
 }
 
-// Check if backend is available — uses API_ORIGIN from api.ts, not hardcoded localhost
-async function isBackendAvailable(): Promise<boolean> {
+export async function logout(): Promise<void> {
+  await api.logout()
+}
+
+export function clearLegacyAuthStorage(): void {
   try {
-    const ctrl = new AbortController()
-    const timeout = setTimeout(() => ctrl.abort(), 3000)
-    await fetch(`${API_ORIGIN}/api/health`, {
-      method: 'GET',
-      signal: ctrl.signal,
-    })
-    clearTimeout(timeout)
-    return true
+    localStorage.removeItem('analitics_token')
+    localStorage.removeItem('prio_dashboard_auth_mode')
+    localStorage.removeItem('prio_dashboard_session')
   } catch {
-    return false
+    // Authentication uses the HttpOnly cookie, not localStorage.
   }
-}
-
-// Initialize default user for local mode — DEV ONLY, never in production
-function initDefaultUser(): void {
-  if (!import.meta.env.DEV) return
-  try {
-    const raw = localStorage.getItem(USERS_KEY)
-    const users = raw ? JSON.parse(raw) : []
-    if (users.length === 0) {
-      users.push({
-        username: 'zahra',
-        passwordHash: simpleHash('admin123'),
-        displayName: 'Mbak Zahra (RSE)',
-        role: 'RSE',
-        region: 'East'
-      })
-      localStorage.setItem(USERS_KEY, JSON.stringify(users))
-    }
-  } catch {}
-}
-
-export async function login(username: string, password: string): Promise<User | null> {
-  // Try API login first
-  const backendAvailable = await isBackendAvailable()
-
-  if (backendAvailable) {
-    try {
-      const result = await api.login(username, password)
-      const user: User = {
-        id: result.user.id,
-        username: result.user.username,
-        displayName: result.user.displayName,
-        role: result.user.role,
-        region: result.user.region,
-        center: result.user.center,
-        crrName: result.user.crrName,
-        channel: result.user.channel,
-        email: result.user.email,
-        phone: result.user.phone,
-        avatarUrl: result.user.avatarUrl
-      }
-      localStorage.setItem(SESSION_KEY, JSON.stringify(user))
-      localStorage.setItem(AUTH_MODE_KEY, 'api')
-      return user
-    } catch (error) {
-      console.warn('API login failed, trying local auth:', error)
-    }
-  }
-
-  // Fallback to local auth
-  initDefaultUser()
-  try {
-    const raw = localStorage.getItem(USERS_KEY)
-    const users = raw ? JSON.parse(raw) : []
-    const found = users.find(
-      (u: any) => u.username === username && u.passwordHash === simpleHash(password)
-    )
-    if (!found) return null
-
-    const user: User = {
-      username: found.username,
-      displayName: found.displayName,
-      role: found.role,
-      region: found.region,
-      center: found.center,
-      crrName: found.crrName
-    }
-    localStorage.setItem(SESSION_KEY, JSON.stringify(user))
-    localStorage.setItem(AUTH_MODE_KEY, 'local')
-    return user
-  } catch {
-    return null
-  }
-}
-
-export function logout(): void {
-  api.logout()
-  localStorage.removeItem(SESSION_KEY)
-  localStorage.removeItem(AUTH_MODE_KEY)
 }
 
 export async function getCurrentUser(): Promise<User | null> {
-  // Check if we have a session
-  const raw = localStorage.getItem(SESSION_KEY)
-  if (!raw) return null
-
-  const authMode = localStorage.getItem(AUTH_MODE_KEY)
-
-  // If using API mode, validate token with backend
-  if (authMode === 'api' && api.getToken()) {
-    try {
-      const result = await api.getMe()
-      const user: User = {
-        id: result.user.id,
-        username: result.user.username,
-        displayName: result.user.displayName,
-        role: result.user.role,
-        region: result.user.region,
-        center: result.user.center,
-        crrName: result.user.crrName,
-        channel: result.user.channel,
-        email: result.user.email,
-        phone: result.user.phone,
-        avatarUrl: result.user.avatarUrl
-      }
-      localStorage.setItem(SESSION_KEY, JSON.stringify(user))
-      return user
-    } catch {
-      // Token invalid, clear session
-      logout()
-      return null
-    }
-  }
-
-  // Local mode - just return stored user
   try {
-    return JSON.parse(raw)
+    const result = await api.getMe()
+    return result.user
   } catch {
     return null
   }
-}
-
-export function isAuthenticated(): boolean {
-  return localStorage.getItem(SESSION_KEY) !== null
 }
 
 // Helper to check role

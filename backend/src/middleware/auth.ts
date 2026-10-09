@@ -1,6 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
+import { parse } from 'cookie';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/db.js';
+
+export const AUTH_COOKIE_NAME = 'analitics_session';
+export const AUTH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/api',
+};
+
+export function clearAuthCookie(res: Response): void {
+  res.clearCookie(AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS);
+}
 
 const JWT_SECRET_RAW = process.env.JWT_SECRET;
 if (!JWT_SECRET_RAW || JWT_SECRET_RAW.length < 32) {
@@ -13,6 +26,7 @@ export interface AuthUser {
   id: string;
   username: string;
   role: string; // 'RSE' | 'STORE_MANAGER' | 'CRR'
+  sessionVersion: number;
   region?: string | null;
   center?: string | null;
   crrName?: string | null;
@@ -37,32 +51,39 @@ export async function authMiddleware(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const authHeader = req.headers.authorization;
+  const token = parse(req.headers.cookie || '')[AUTH_COOKIE_NAME];
 
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!token) {
     res.status(401).json({ error: 'No token provided' });
     return;
   }
 
-  const token = authHeader.split(' ')[1];
-
+  let decoded: AuthUser;
   try {
-    const decoded = verifyToken(token);
-
-    // Verify user still exists
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, username: true, role: true, region: true, center: true, crrName: true, channel: true }
-    });
-
-    if (!user) {
-      res.status(401).json({ error: 'User not found' });
-      return;
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
+    decoded = verifyToken(token);
+  } catch {
+    clearAuthCookie(res);
     res.status(401).json({ error: 'Invalid token' });
+    return;
   }
+
+  let user;
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, username: true, role: true, region: true, center: true, crrName: true, channel: true, sessionVersion: true }
+    });
+  } catch (error) {
+    next(error);
+    return;
+  }
+
+  if (!user || user.sessionVersion !== decoded.sessionVersion) {
+    clearAuthCookie(res);
+    res.status(401).json({ error: 'Invalid or expired session' });
+    return;
+  }
+
+  req.user = user;
+  next();
 }

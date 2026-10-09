@@ -250,7 +250,7 @@ function EditableField({ label, value, field, onSave, disabled }: {
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('information')
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
   const [activeInfo, setActiveInfo] = useState<{ activeSource: string | null; sourceFileName: string | null } | null>(null)
@@ -264,7 +264,7 @@ export function SettingsPage() {
   const [cropDialogOpen, setCropDialogOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const isApiMode = !!api.getToken()
+  const isApiMode = !!user
 
   const loadSyncStatus = useCallback(async () => {
     try { setSyncStatus(await api.getSyncStatus()) } catch {}
@@ -351,14 +351,8 @@ export function SettingsPage() {
 
   const handleAvatarSave = async (blob: Blob) => {
     const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' })
-    const { avatarUrl } = await api.uploadAvatar(file)
-    const stored = localStorage.getItem('prio_dashboard_session')
-    if (stored) {
-      const u = JSON.parse(stored)
-      u.avatarUrl = avatarUrl
-      localStorage.setItem('prio_dashboard_session', JSON.stringify(u))
-    }
-    window.dispatchEvent(new Event('user-updated'))
+    await api.uploadAvatar(file)
+    await refreshUser()
     setAvatarSrc(null)
     toast.success('Avatar updated')
   }
@@ -366,13 +360,7 @@ export function SettingsPage() {
   const handleAvatarDelete = async () => {
     try {
       await api.deleteAvatar()
-      const stored = localStorage.getItem('prio_dashboard_session')
-      if (stored) {
-        const u = JSON.parse(stored)
-        u.avatarUrl = null
-        localStorage.setItem('prio_dashboard_session', JSON.stringify(u))
-      }
-      window.dispatchEvent(new Event('user-updated'))
+      await refreshUser()
       setAvatarDialogOpen(false)
       toast.success('Avatar removed')
     } catch (e: any) { toast.error(e.message) }
@@ -382,14 +370,8 @@ export function SettingsPage() {
   const handleFieldSave = async (field: string, value: string) => {
     const data: any = {}
     data[field] = value || null
-    const res = await api.updateProfile(data)
-    const stored = localStorage.getItem('prio_dashboard_session')
-    if (stored) {
-      const u = JSON.parse(stored)
-      u[field] = res.user[field]
-      localStorage.setItem('prio_dashboard_session', JSON.stringify(u))
-    }
-    if (res.token) api.setToken(res.token)
+    await api.updateProfile(data)
+    await refreshUser()
   }
 
 

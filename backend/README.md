@@ -8,7 +8,7 @@ Backend API for Analitics - XL Axiata Sales Analytics
 - **Framework**: Express.js
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
-- **Auth**: JWT (JSON Web Tokens)
+- **Auth**: JWT in an HttpOnly, SameSite cookie
 
 ## Setup
 
@@ -22,7 +22,15 @@ bun install
 
 ```bash
 cp .env.example .env
-# Edit .env with your database credentials
+# Edit DATABASE_URL for your local PostgreSQL credentials
+```
+
+Make sure PostgreSQL is running and the database named in `DATABASE_URL` already exists. The example URL uses the local database `prio_dashboard` and PostgreSQL account `postgres`.
+
+Create the database once if needed:
+
+```bash
+createdb -U postgres prio_dashboard
 ```
 
 ### 3. Setup database
@@ -34,7 +42,7 @@ bun run db:generate
 # Push schema to database
 bun run db:push
 
-# Seed initial data
+# Create the development login and default targets (safe to rerun)
 bun run db:seed
 ```
 
@@ -50,6 +58,7 @@ The API will be available at `http://localhost:3001`
 
 ### Auth
 - `POST /api/auth/login` - Login
+- `POST /api/auth/logout` - Revoke all sessions for the current user
 - `POST /api/auth/register` - Register (admin only)
 - `GET /api/auth/me` - Get current user
 
@@ -91,6 +100,7 @@ The API will be available at `http://localhost:3001`
 ## Default Users (Seed — Dev Only)
 
 Seed runs only when `NODE_ENV !== 'production'`.
+It creates the default user and missing targets without deleting existing users, uploaded data, or customized targets.
 
 | Username | Password | Role | Description |
 |----------|----------|------|-------------|

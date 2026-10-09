@@ -13,6 +13,7 @@ model User {
   passwordHash  String
   displayName   String
   role          String    @default("CRR") // RSE, STORE_MANAGER, CRR
+  sessionVersion Int      @default(0)
 
   // Hierarki
   region        String?   // "East", "West" (untuk RSE)

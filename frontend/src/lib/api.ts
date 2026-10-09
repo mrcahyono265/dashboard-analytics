@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+export const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : '/api');
 export const API_ORIGIN = API_BASE.replace(/\/api$/, '');
 
 interface ApiOptions {
@@ -8,45 +8,24 @@ interface ApiOptions {
 }
 
 class ApiClient {
-  private token: string | null = null;
-
-  constructor() {
-    this.token = localStorage.getItem('analitics_token');
-  }
-
-  setToken(token: string | null) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('analitics_token', token);
-    } else {
-      localStorage.removeItem('analitics_token');
-    }
-  }
-
-  getToken(): string | null {
-    return this.token;
-  }
-
   async request<T = any>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     const { method = 'GET', body, headers = {} } = options;
 
     const config: RequestInit = {
       method,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...headers,
       },
     };
 
-    if (this.token) {
-      (config.headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
-    }
-
     if (body) {
       config.body = JSON.stringify(body);
     }
 
     const response = await fetch(`${API_BASE}${endpoint}`, config);
+    this.handleUnauthorized(response, endpoint);
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -69,15 +48,11 @@ class ApiClient {
     const config: RequestInit = {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     };
 
-    if (this.token) {
-      config.headers = {
-        'Authorization': `Bearer ${this.token}`,
-      };
-    }
-
     const response = await fetch(`${API_BASE}${endpoint}`, config);
+    this.handleUnauthorized(response, endpoint);
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Upload failed' }));
@@ -89,12 +64,10 @@ class ApiClient {
 
   // ─── Auth ───────────────────────────────────────────────
   async login(username: string, password: string) {
-    const result = await this.request<{ token: string; user: any }>('/auth/login', {
+    return this.request<{ user: any }>('/auth/login', {
       method: 'POST',
       body: { username, password },
     });
-    this.setToken(result.token);
-    return result;
   }
 
   async register(data: {
@@ -106,12 +79,10 @@ class ApiClient {
     center?: string;
     crrName?: string;
   }) {
-    const result = await this.request<{ token: string; user: any }>('/auth/register', {
+    return this.request<{ user: any }>('/auth/register', {
       method: 'POST',
       body: data,
     });
-    this.setToken(result.token);
-    return result;
   }
 
   async getMe() {
@@ -119,7 +90,7 @@ class ApiClient {
   }
 
   logout() {
-    this.setToken(null);
+    return this.request<{ message: string }>('/auth/logout', { method: 'POST' });
   }
 
   // ─── Data ───────────────────────────────────────────────
@@ -235,11 +206,10 @@ class ApiClient {
     const config: RequestInit = {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     };
-    if (this.token) {
-      config.headers = { 'Authorization': `Bearer ${this.token}` };
-    }
     const response = await fetch(`${API_BASE}/auth/avatar`, config);
+    this.handleUnauthorized(response, '/auth/avatar');
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Upload failed' }));
       throw new Error(error.error || `HTTP ${response.status}`);
@@ -321,10 +291,17 @@ class ApiClient {
 
   async downloadSyncExcel() {
     const response = await fetch(`${API_BASE}/sync/download`, {
-      headers: { Authorization: `Bearer ${this.token}` },
+      credentials: 'include',
     });
+    this.handleUnauthorized(response, '/sync/download');
     if (!response.ok) throw new Error('Download failed');
     return response.blob();
+  }
+
+  private handleUnauthorized(response: Response, endpoint: string) {
+    if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/logout') {
+      window.dispatchEvent(new Event('auth:unauthorized'));
+    }
   }
 
   // ─── Stores ───────────────────────────────────────────────

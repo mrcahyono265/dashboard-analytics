@@ -8,26 +8,20 @@ async function main() {
     console.error('❌ Seed script refuses to run in production (NODE_ENV=production)');
     process.exit(1);
   }
-  console.log('🌱 Resetting database (dev only)...');
-
-  await prisma.syncLog.deleteMany();
-  await prisma.dataRecord.deleteMany();
-  await prisma.target.deleteMany();
-  await prisma.userAssignment.deleteMany();
-  await prisma.user.deleteMany();
-
-  console.log('✅ All existing data cleared');
+  console.log('🌱 Seeding initial development data...');
 
   const password = await bcrypt.hash('admin123', 10);
-  const adam = await prisma.user.create({
-    data: {
+  const adam = await prisma.user.upsert({
+    where: { username: 'adam.bakhtiar.muqsith' },
+    update: {},
+    create: {
       username: 'adam.bakhtiar.muqsith',
       passwordHash: password,
       displayName: 'Adam Bakhtiar Muqsith',
       role: 'RSE',
     }
   });
-  console.log('✅ Created admin:', adam.displayName);
+  console.log('✅ Development admin ready:', adam.displayName);
 
   const currentPeriod = new Date().toISOString().slice(0, 7);
   const targets = [
@@ -39,11 +33,20 @@ async function main() {
     { channel: 'XLSatu', targetValue: 20 },
   ];
   for (const t of targets) {
-    await prisma.target.create({ data: { ...t, period: currentPeriod } });
+    await prisma.target.upsert({
+      where: {
+        channel_period_center_staffName: {
+          channel: t.channel,
+          period: currentPeriod,
+          center: '',
+          staffName: '',
+        },
+      },
+      update: {},
+      create: { ...t, period: currentPeriod },
+    });
   }
-  console.log('✅ Created default targets for period:', currentPeriod);
-
-  console.log('\n📋 Login: adam.bakhtiar.muqsith / admin123');
+  console.log('✅ Default targets ready for period:', currentPeriod);
 }
 
 main()

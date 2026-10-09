@@ -23,14 +23,14 @@ export function LoginPage() {
 
     setIsLoading(true)
 
-    const success = await login(username, password)
-    setIsLoading(false)
-
-    if (success) {
+    try {
+      await login(username, password)
       toast.success('Welcome back!')
       navigate('/')
-    } else {
-      toast.error('Invalid username or password')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Login gagal')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -95,9 +95,6 @@ export function LoginPage() {
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
-            <div className="mt-4 text-center text-xs text-on-surface-variant/60">
-              Default: admin / admin123
-            </div>
           </CardContent>
         </Card>
       </div>

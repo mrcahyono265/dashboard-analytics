@@ -18,6 +18,8 @@ import { resumeAllSyncJobs } from './jobs/sync-excel365.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const FRONTEND_ORIGIN = new URL(FRONTEND_URL).origin;
 
 // Trust proxy (reverse proxy nginx)
 app.set('trust proxy', 1);
@@ -27,9 +29,16 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: FRONTEND_ORIGIN,
   credentials: true
 }));
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.headers.origin && req.headers.origin !== FRONTEND_ORIGIN) {
+    res.status(403).json({ error: 'Invalid request origin' });
+    return;
+  }
+  next();
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

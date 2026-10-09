@@ -72,10 +72,6 @@ export function useDataLoader() {
     }
   }, [googleSheetUrl, setData, setLoading, setError])
 
-  const loadDefaultExcel = useCallback(async () => {
-    setLoading(false)
-  }, [setLoading])
-
   const fetchFromApi = useCallback(async (period?: string) => {
     try {
       setLoading(true)
@@ -117,13 +113,8 @@ export function useDataLoader() {
   }, [setData, setReportData, setLoading])
 
   useEffect(() => {
-    // If logged in, load from backend API. Otherwise try static demo file.
-    if (api.getToken()) {
-      fetchFromApi()
-    } else {
-      loadDefaultExcel()
-    }
-  }, [fetchFromApi, loadDefaultExcel])
+    fetchFromApi()
+  }, [fetchFromApi])
 
   return {
     data, loading, error, dataSource,

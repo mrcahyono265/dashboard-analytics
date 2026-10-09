@@ -4,6 +4,7 @@ import { BarChart3, ChevronDown, ChevronRight, LogOut } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { navGroups, bottomNavItems, type NavGroup } from './nav-config'
 import { API_ORIGIN } from '@/lib/api'
+import { toast } from 'sonner'
 
 interface SidebarProps {
   collapsed: boolean
@@ -17,6 +18,14 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, isMobi
   const location = useLocation()
   const { user, logout } = useAuth()
   const showFull = isMobile || !collapsed
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch {
+      toast.error('Tidak dapat menghubungi server untuk mengakhiri semua sesi.')
+    }
+  }
 
   const isPathActive = (path: string) =>
     matchPath({ path, end: true }, location.pathname) !== null
@@ -103,7 +112,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, isMobi
                   <p className="text-[10px] text-on-surface-variant uppercase font-medium">{user?.role || ''}</p>
                 </div>
               </Link>
-              <button onClick={logout} className="flex items-center gap-3 px-4 py-2 text-error hover:bg-error-container/20 rounded-xl w-full text-sm font-medium">
+              <button type="button" onClick={handleLogout} className="flex items-center gap-3 px-4 py-2 text-error hover:bg-error-container/20 rounded-xl w-full text-sm font-medium">
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
               </button>
@@ -119,7 +128,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose, isMobi
                   </div>
                 )}
               </Link>
-              <button onClick={logout} className="p-2 text-error hover:bg-error-container/20 rounded-lg">
+              <button type="button" onClick={handleLogout} aria-label="Logout" className="p-2 text-error hover:bg-error-container/20 rounded-lg">
                 <LogOut className="h-4 w-4" />
               </button>
             </div>

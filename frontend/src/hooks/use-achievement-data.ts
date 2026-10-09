@@ -66,7 +66,6 @@ export function useAchievementData(period?: string): AchievementResult {
   const [targetsLoading, setTargetsLoading] = useState(false)
 
   const fetchTargets = useCallback(() => {
-    if (!api.getToken()) return
     setTargetsLoading(true)
     api.getTargets(effectivePeriod)
       .then(r => setTargets(r.targets || []))
@@ -77,7 +76,6 @@ export function useAchievementData(period?: string): AchievementResult {
   const [smMap, setSmMap] = useState<Map<string, string>>(new Map())
 
   const fetchSmMap = useCallback(() => {
-    if (!api.getToken()) return
     api.getUserAssignments({ roleType: 'SM' })
       .then(r => {
         const map = new Map<string, string>()

@@ -49,7 +49,7 @@ The platform enables staff, supervisors, managers, and owners to track daily act
 | Notifications        | Sonner |
 | Backend Runtime      | Bun + Express 4 |
 | Database             | PostgreSQL 16 + Prisma ORM 6 |
-| Auth                 | JWT + bcryptjs |
+| Auth                 | JWT in HttpOnly cookie + bcryptjs |
 | File Upload          | Multer |
 | Validation           | Zod |
 | Security             | Helmet, express-rate-limit |
@@ -126,22 +126,28 @@ npm install
 # Install backend dependencies
 cd ../backend
 bun install
+# Configure the local API environment
+cp .env.example .env
+# Edit .env: set DATABASE_URL for your local PostgreSQL and a JWT_SECRET of at least 32 characters
 
-# Generate Prisma client
+# Create the PostgreSQL database once if it does not exist (example DATABASE_URL uses prio_dashboard)
+createdb -U postgres prio_dashboard
+
+# Prepare schema and development login
 bun run db:generate
+bun run db:push
+bun run db:seed
 ```
+
+The development seed creates `adam.bakhtiar.muqsith / admin123` and default targets. It is safe to run again: existing users, uploaded data, and customized targets are preserved.
 
 ---
 
 ## Environment Variables
 
-Copy the example environment file.
+For local development, use `backend/.env.example` as shown in the Installation steps. Ensure PostgreSQL is running; edit `backend/.env` if your local database name, account, or password differs from the example.
 
-```bash
-cp .env.example .env
-```
-
-Configure the required environment variables before running the application.
+The root `.env.example` is for Docker Compose, not local Bun development. Docker Compose creates its own `analitics` database inside the `db` container and applies the Prisma schema automatically.
 
 **Key variables:**
 
@@ -160,10 +166,12 @@ Configure the required environment variables before running the application.
 Start the development environment.
 
 ```bash
-# Terminal 1 — Backend (from backend/)
+# Terminal 1
+cd backend
 bun run dev
 
-# Terminal 2 — Frontend (from frontend/)
+# Terminal 2
+cd frontend
 npm run dev
 ```
 

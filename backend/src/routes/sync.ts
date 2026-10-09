@@ -9,7 +9,6 @@ import { getAuthUrl, exchangeCodeForTokens, MicrosoftGraphClient } from '../lib/
 import { saveTokens, getTokens, deleteTokens } from '../lib/token-store.js';
 import { startSyncJob, stopSyncJob, getSyncJobStatus, syncOnce, syncFromBuffer, generateExcelBuffer, clearAllUserData, startUrlSyncJob, stopUrlSyncJob, getUrlSyncJobStatus } from '../jobs/sync-excel365.js';
 import { addSSEClient } from '../lib/sse.js';
-import { verifyToken } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -215,27 +214,18 @@ router.get('/status', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 });
 
-// GET /api/sync/events — SSE stream for real-time data update notifications
-// Uses token query param because EventSource API doesn't support custom headers
-router.get('/events', async (req: Request, res: Response) => {
-  try {
-    const token = req.query.token as string;
-    if (!token) { res.status(401).json({ error: 'Token required' }); return; }
-    const decoded = verifyToken(token);
+// GET /api/sync/events — SSE stream authenticated by the HttpOnly session cookie
+router.get('/events', authMiddleware, (req: AuthRequest, res: Response) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
 
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    });
+  const ping = setInterval(() => res.write(': ping\n\n'), 30000);
+  addSSEClient(req.user!.id, res);
 
-    const ping = setInterval(() => res.write(': ping\n\n'), 30000);
-    addSSEClient(decoded.id, res);
-
-    req.on('close', () => clearInterval(ping));
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
-  }
+  req.on('close', () => clearInterval(ping));
 });
 
 // GET /api/sync/files — list Excel files from OneDrive
